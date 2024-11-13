@@ -6,7 +6,6 @@ from pyzbar.pyzbar import decode
 import cv2
 import numpy as np
 
-
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.secret_key = 'supersecretkey'
@@ -14,7 +13,6 @@ app.secret_key = 'supersecretkey'
 # Load Excel data
 EXCEL_FILE_PATH = 'Inventory.xlsx'  # Update with your actual file path
 df = pd.read_excel(EXCEL_FILE_PATH)
-
 
 def lookup_item(barcode_data):
     barcode_data = str(barcode_data).strip()
@@ -30,8 +28,6 @@ def lookup_item(barcode_data):
         return item_name, item_price
     else:
         return None, None
-
-
 
 # Ensure the static/uploads folder exists
 os.makedirs(os.path.join("static", "uploads"), exist_ok=True)
@@ -56,13 +52,12 @@ def index():
 
             # Open the image and preprocess
             image = Image.open(file_path)
-            cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+            image = image.convert("L")  # Convert the image to grayscale
+            cv_image = np.array(image)
 
-            # Apply preprocessing steps
-            contrasted_image = cv2.convertScaleAbs(cv_image, alpha=2.0, beta=50)
-            blurred_image = cv2.GaussianBlur(contrasted_image, (5, 5), 0)
+            # Apply adaptive thresholding to preserve the barcode
             binary_image = cv2.adaptiveThreshold(
-                blurred_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+                cv_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
             )
             resized_image = cv2.resize(binary_image, (binary_image.shape[1] * 2, binary_image.shape[0] * 2))
 
@@ -87,9 +82,6 @@ def index():
             os.remove(file_path)  # Remove original uploaded file
 
     return render_template("index.html", processed_image_path=processed_image_path)
-
-
-
 
 if __name__ == "__main__":
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
