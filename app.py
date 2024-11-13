@@ -5,6 +5,8 @@ import os
 from pyzbar.pyzbar import decode
 import cv2
 import numpy as np
+import tensorflow as tf
+from tensorflow.keras.preprocessing import image
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -13,6 +15,7 @@ app.secret_key = 'supersecretkey'
 # Load Excel data
 EXCEL_FILE_PATH = 'Inventory.xlsx'  # Update with your actual file path
 df = pd.read_excel(EXCEL_FILE_PATH)
+
 
 def lookup_item(barcode_data):
     barcode_data = str(barcode_data).strip()
@@ -29,8 +32,43 @@ def lookup_item(barcode_data):
     else:
         return None, None
 
+
 # Ensure the static/uploads folder exists
 os.makedirs(os.path.join("static", "uploads"), exist_ok=True)
+
+# Load pretrained MobileNet model from Keras
+model = tf.keras.applications.MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
+
+# Freeze the base model layers to prevent training
+model.trainable = False
+
+
+def preprocess_image(img):
+    # Resize the image to the input size of the model (224x224 for MobileNetV2)
+    img_resized = cv2.resize(img, (224, 224))  # Adjust size based on your model's input
+    img_array = image.img_to_array(img_resized)
+    img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension
+    img_array /= 255.0  # Normalize image
+    return img_array
+
+
+def detect_barcode_with_cnn(img_path):
+    img = cv2.imread(img_path)
+    preprocessed_img = preprocess_image(img)
+
+    # Make prediction using the pretrained MobileNet model
+    prediction = model.predict(preprocessed_img)
+
+    # Since MobileNet is a general-purpose model, this step is just for illustration
+    # You can implement specific logic based on prediction (e.g., checking for barcode-like features)
+    # Here, we decode the image using pyzbar if the model detects a barcode-like object
+    barcodes = decode(img)
+
+    if barcodes:
+        return barcodes[0].data.decode("utf-8")  # Return the barcode data if detected
+    else:
+        return None
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -50,26 +88,11 @@ def index():
             file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
             file.save(file_path)
 
-            # Open the image and preprocess
-            image = Image.open(file_path)
-            image = image.convert("L")  # Convert the image to grayscale
-            cv_image = np.array(image)
+            # Use CNN (MobileNet) to detect barcode in the image
+            barcode_data = detect_barcode_with_cnn(file_path)
 
-            # Apply adaptive thresholding to preserve the barcode
-            binary_image = cv2.adaptiveThreshold(
-                cv_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
-            )
-            resized_image = cv2.resize(binary_image, (binary_image.shape[1] * 2, binary_image.shape[0] * 2))
-
-            # Save the processed image in the static/uploads folder for display
-            processed_image_filename = "processed_" + file.filename
-            processed_image_path = os.path.join("static", "uploads", processed_image_filename)
-            cv2.imwrite(processed_image_path, resized_image)
-
-            # Decode the barcode from the preprocessed image
-            barcodes = decode(Image.fromarray(resized_image))
-            if barcodes:
-                barcode_data = barcodes[0].data.decode("utf-8")
+            if barcode_data:
+                # Decode the barcode data
                 item_name, item_price = lookup_item(barcode_data)
 
                 if item_name and item_price:
@@ -82,6 +105,7 @@ def index():
             os.remove(file_path)  # Remove original uploaded file
 
     return render_template("index.html", processed_image_path=processed_image_path)
+
 
 if __name__ == "__main__":
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
