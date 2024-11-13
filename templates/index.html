@@ -2,25 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barcode Scanner</title>
 </head>
 <body>
-    <h1>Scan a Barcode</h1>
-    <form action="/" method="post" enctype="multipart/form-data">
-        <label for="file">Choose a barcode image:</label>
-        <input type="file" name="file" id="file" accept="image/*" capture="environment" required>
-        <button type="submit">Upload and Scan</button>
+    <h1>Upload an Image with Barcode</h1>
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <button type="submit">Upload</button>
     </form>
 
+    <!-- Display flash messages for success or error feedback -->
     {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-          {% for message in messages %}
-            <li>{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
+        {% if messages %}
+            <ul>
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
     {% endwith %}
+
+    <!-- Display the preprocessed image in a smaller size if available -->
+    {% if processed_image_path %}
+        <h2>Processed Image</h2>
+        <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
+             alt="Processed Barcode Image" style="width: 200px; height: auto;">
+    {% endif %}
 </body>
 </html>

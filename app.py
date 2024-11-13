@@ -1,8 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
-from pyzbar.pyzbar import decode
 from PIL import Image
 import pandas as pd
 import os
+from pyzbar.pyzbar import decode
+import cv2
+import numpy as np
+
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -29,10 +32,15 @@ def lookup_item(barcode_data):
         return None, None
 
 
+
+# Ensure the static/uploads folder exists
+os.makedirs(os.path.join("static", "uploads"), exist_ok=True)
+
 @app.route("/", methods=["GET", "POST"])
 def index():
+    processed_image_path = None  # Initialize variable for processed image path
+
     if request.method == "POST":
-        # Check if the post request has the file part
         if "file" not in request.files:
             flash("No file part")
             return redirect(request.url)
@@ -43,17 +51,30 @@ def index():
             return redirect(request.url)
 
         if file:
-            # Save the file to the upload folder
             file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
             file.save(file_path)
 
-            # Decode the barcode from the image
+            # Open the image and preprocess
             image = Image.open(file_path)
-            barcodes = decode(image)
+            cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+
+            # Apply preprocessing steps
+            contrasted_image = cv2.convertScaleAbs(cv_image, alpha=2.0, beta=50)
+            blurred_image = cv2.GaussianBlur(contrasted_image, (5, 5), 0)
+            binary_image = cv2.adaptiveThreshold(
+                blurred_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+            )
+            resized_image = cv2.resize(binary_image, (binary_image.shape[1] * 2, binary_image.shape[0] * 2))
+
+            # Save the processed image in the static/uploads folder for display
+            processed_image_filename = "processed_" + file.filename
+            processed_image_path = os.path.join("static", "uploads", processed_image_filename)
+            cv2.imwrite(processed_image_path, resized_image)
+
+            # Decode the barcode from the preprocessed image
+            barcodes = decode(Image.fromarray(resized_image))
             if barcodes:
                 barcode_data = barcodes[0].data.decode("utf-8")
-
-                # Look up item in the Excel file
                 item_name, item_price = lookup_item(barcode_data)
 
                 if item_name and item_price:
@@ -63,10 +84,11 @@ def index():
             else:
                 flash("No barcode detected in the image.")
 
-            # Remove the file after processing
-            os.remove(file_path)
+            os.remove(file_path)  # Remove original uploaded file
 
-    return render_template("index.html")
+    return render_template("index.html", processed_image_path=processed_image_path)
+
+
 
 
 if __name__ == "__main__":
