@@ -46,6 +46,6 @@ def main(image_path, excel_file_path):
     else:
         print("No barcode detected in the image.")
 # Example usage
-image_path = '62345678.png'
+image_path = 'Barcodes(testing)/52345678.png'
 excel_file_path = 'Inventory.xlsx'
 main(image_path, excel_file_path)
