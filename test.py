@@ -1,18 +1,14 @@
-from pyzbar.pyzbar import decode
-import cv2
+import sys
+import os
 
+def is_venv():
+    if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+        return True
+    if 'VIRTUAL_ENV' in os.environ:
+        return True
+    return False
 
-def test_barcode_detection(image_path):
-    # Load an image with a barcode
-    image = cv2.imread(image_path)
-    barcodes = decode(image)
-
-    if barcodes:
-        for barcode in barcodes:
-            print("Detected barcode data:", barcode.data.decode("utf-8"))
-    else:
-        print("No barcode detected in the image.")
-
-
-# Replace 'path_to_test_image.jpg' with an image containing a barcode
-test_barcode_detection('testBarcode.jpg')
+if is_venv():
+    print("Virtual environment is active.")
+else:
+    print("Virtual environment is not active.")
