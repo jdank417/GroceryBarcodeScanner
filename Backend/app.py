@@ -14,7 +14,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 app.secret_key = 'supersecretkey'
 
 # Load Excel data
-EXCEL_FILE_PATH = 'Inventory.xlsx'  # Update with your actual file path
+EXCEL_FILE_PATH = '../Item Database/Inventory.xlsx'  # Update with your actual file path
 df = pd.read_excel(EXCEL_FILE_PATH)
 
 
@@ -37,7 +37,7 @@ def lookup_item(barcode_data):
 
 
 # Ensure the static/uploads folder exists
-os.makedirs(os.path.join("static", "uploads"), exist_ok=True)
+os.makedirs(os.path.join("../static", "uploads"), exist_ok=True)
 
 # Load pretrained MobileNet model from Keras and convert to TensorFlow Lite model
 model = tf.keras.applications.MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
