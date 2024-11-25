@@ -3,30 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <title>Barcode Scanner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #800000; /* Wentworth's red */
+            padding: 10px 20px;
+            color: #fff;
+        }
+
+        header .logo img {
+            max-height: 50px;
+        }
+
+        header nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            gap: 15px;
+        }
+
+        header nav ul li a {
+            color: #FFD700; /* Bright yellow accent */
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        main {
+            padding: 20px;
+            flex: 1;
+        }
+
+        .upload-section label {
+    display: block;
+    margin: 10px 0 5px;
+    font-weight: bold;
+    }
+
+    .upload-section input[type="text"],
+    .upload-section input[type="file"] {
+        display: block;
+        width: 100%;
+        max-width: 400px;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .upload-section p {
+        text-align: center;
+        margin: 10px 0;
+        font-style: italic;
+        color: #666;
+    }
+
+
+        .upload-section, .results-section {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+            border-top: 5px solid #FFD700; /* Yellow highlight */
+        }
+
+        .upload-section button, .results-section button {
+            background-color: #FFD700; /* Yellow button */
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .upload-section button:hover, .results-section button:hover {
+            background-color: #e6c200;
+        }
+
+        .results-section h2 {
+            margin-bottom: 15px;
+            color: #800000;
+        }
+
+        .results-section img {
+            width: 200px;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: 20px;
+
+        }
+        footer a {
+            color: #ff4500;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
 </head>
 <body>
-    <h1>Upload an Image with Barcode</h1>
-    <form method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required>
-        <button type="submit">Upload</button>
-    </form>
 
-    <!-- Display flash messages for success or error feedback -->
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
+    <header>
+        <nav>
             <ul>
-                {% for message in messages %}
-                    <li>{{ message }}</li>
-                {% endfor %}
+                <li><a href="#">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Contact</a></li>
             </ul>
-        {% endif %}
-    {% endwith %}
+        </nav>
+    </header>
 
-    <!-- Display the preprocessed image in a smaller size if available -->
-    {% if processed_image_path %}
-        <h2>Processed Image</h2>
-        <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
-             alt="Processed Barcode Image" style="width: 200px; height: auto;">
-    {% endif %}
+    <main>
+        <h1>Upload an Image with Barcode</h1>
+
+        <section class="upload-section">
+                 <!-- Photo Input -->
+            <form method="post" enctype="multipart/form-data">
+                <input type="file" name="file" required>
+                <button type="submit">Upload</button>
+
+                 <!-- Text Input -->
+            <label for="barcode-id">Enter Barcode ID:</label>
+            <input type="text" name="barcode_id" id="barcode-id" placeholder="Enter Barcode ID" maxlength="20" required>
+            <button type="submit">Submit</button>
+            </form>
+
+
+        </section>
+
+        <div style="display: none;">
+            <section class="results-section">
+                    <!-- Display flash messages for success or error feedback -->
+
+                {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            <ul>
+                                {% for message in messages %}
+                                    <li>{{ message }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Display the preprocessed image in a smaller size if available -->
+                    {% if processed_image_path %}
+                        <h2>Processed Image</h2>
+                        <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
+                             alt="Processed Barcode Image" style="width: 200px; height: auto;">
+                    {% endif %}
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Wentworth Institute of Technology. All Rights Reserved.</p>
+    </footer>
+
 </body>
 </html>
