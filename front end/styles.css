@@ -1,19 +1,86 @@
+/* General Styles */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    color: #333;
+    background-color: #f9f9f9;
 }
 
-header{
-    background-color: #333333;
-    color: #fbaa19;
-    text-align: left;
-    padding: 1em;
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #800000; /* Wentworth's red */
+    padding: 10px 20px;
+    color: #fff;
 }
 
-footer{
-    background-color: #333333;
-    color: #fbaa19;
+header .logo img {
+    max-height: 50px;
+}
+
+header nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 15px;
+}
+
+header nav ul li a {
+    color: #FFD700; /* Bright yellow accent */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+main {
+    padding: 20px;
+}
+
+.upload-section {
     text-align: center;
-    padding: 1em;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin: 30px auto;
+    border-top: 5px solid #FFD700; /* Yellow highlight */
+}
+
+.upload-section button {
+    background-color: #FFD700; /* Yellow button */
+    color: #333;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+    margin: 5px;
+}
+
+.upload-section button:hover {
+    background-color: #e6c200;
+}
+
+.results-section {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    max-width: 600px;
+    margin: 30px auto;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-top: 5px solid #FFD700;
+}
+
+.results-section h2 {
+    color: #800000;
+}
+
+#results {
+    font-size: 16px;
+    color: #333;
 }

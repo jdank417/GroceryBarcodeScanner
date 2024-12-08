@@ -37,7 +37,7 @@ def lookup_item(barcode_data):
 
 
 # Ensure the static/uploads folder exists
-os.makedirs(os.path.join("../static", "uploads"), exist_ok=True)
+os.makedirs(os.path.join("static", "uploads"), exist_ok=True)
 
 # Load pretrained MobileNet model from Keras and convert to TensorFlow Lite model
 model = tf.keras.applications.MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
@@ -80,34 +80,36 @@ def index():
     processed_image_path = None  # Initialize variable for processed image path
 
     if request.method == "POST":
-        if "file" not in request.files:
-            flash("No file part")
-            return redirect(request.url)
+        input_type = request.form.get("input_type")
 
-        file = request.files["file"]
-        if file.filename == "":
-            flash("No selected file")
-            return redirect(request.url)
-
-        if file:
+        if input_type == "photo" and "file" in request.files:
+            file = request.files["file"]
+            if file.filename == "":
+                flash("No selected file")
+                return redirect(request.url)
             file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
             file.save(file_path)
-
-            # Use Pyzbar first, then CNN to detect barcode in the image
             barcode_data = detect_barcode_with_pyzbar_first(file_path)
-
             if barcode_data:
-                # Decode the barcode data
                 item_name, item_price = lookup_item(barcode_data)
-
                 if item_name and item_price:
                     flash(f"Item: {item_name}, Price: ${item_price}")
                 else:
                     flash("Item not found in the Excel file")
             else:
                 flash("No barcode detected in the image.")
-
             os.remove(file_path)  # Remove original uploaded file
+
+        elif input_type == "barcode":
+            barcode_id = request.form.get("barcode_id")
+            if barcode_id:
+                item_name, item_price = lookup_item(barcode_id)
+                if item_name and item_price:
+                    flash(f"Item: {item_name}, Price: ${item_price}")
+                else:
+                    flash("Item not found in the Excel file")
+            else:
+                flash("Please enter a barcode ID")
 
     return render_template("index.html", processed_image_path=processed_image_path)
 
