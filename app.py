@@ -14,7 +14,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 app.secret_key = 'supersecretkey'
 
 # Load Excel data
-EXCEL_FILE_PATH = '../Item Database/Inventory.xlsx'  # Update with your actual file path
+EXCEL_FILE_PATH = 'Item Database/Inventory.xlsx'
 df = pd.read_excel(EXCEL_FILE_PATH)
 
 
