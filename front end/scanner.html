@@ -3,47 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <title>Barcode</title>
+    <title>Barcode Scanner - Wentworth</title>
 </head>
 <body>
-
     <header>
-        Tessie's Barcode Scanner
+       <!-- <div class="logo">
+            <img src="wentworth-logo.png" alt="Wentworth Institute of Technology Logo">
+        </div>-->
+        <nav>
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </nav>
     </header>
 
-    <nav>
-       <ul>
-        <li><a href="home">Main</a></li>
-        <li><a href="about">About all functions</a></li>
-        <li><a href="scanner">The scanner of barcodes</a></li>
-       </ul>
+    <main>
+        <section class="upload-section">
+            <h1>Barcode Scanner</h1>
+            <p>Upload an image or type a barcode number to retrieve product details.</p>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" id="barcodeImage" accept="image/*">
+                <button type="button" id="scanButton">Scan</button>
+                <button type="button" id="cancelButton">Cancel</button>
+            </form>
+            <div>
+                <input type="text" id="barcodeInput" placeholder="Enter barcode number">
+                <button type="button" id="typeButton">Submit</button>
+                <button type="button" id="cancelInputButton">Cancel</button>
+            </div>
+        </section>
 
-<section id="home">
-    <h2>Barcode</h2>
-    <!--possible images?-->
-</section>
+        <section class="results-section">
+            <h2>Scan Results</h2>
+            <div id="results">
+                <p>No results yet. Scan or enter a barcode to get started!</p>
+            </div>
+        </section>
+    </main>
 
-<section id="about">
-    <h2>About the Webapp</h2>
-    <p>This project is a web application that allows users to scan barcodes of grocery items and retrieve information such as item names and prices from an Excel or SQLite inventory. The application uses a pre-trained MobileNetV2 model to detect barcodes in images uploaded by the user and pyzbar to decode the barcodes once detected.<p>
-    <br>
-    <p>This Project was created by the Business Affairs Committee on the Wentworth Student Government to make price information of Tessie's More accessible.<p>
-    <br>
-</section>
+    <footer>
+        <p>&copy; 2024 Wentworth Institute of Technology. All Rights Reserved.</p>
+    </footer>
 
-<section id="scanner">
-    <!--the code for scanner from open source-->
-</section>
-
-<footer>
-    <p>WIT-authors:</p>
-    <p>2024-2025</p>
-    <p>Jason Dank  |  Aliya Vagapova</p>
-    <p>This Product is Brought to you by the Wentworth Student Government Business Affairs Committee</p>
-</footer>
-
-    </nav>
-    
+    <script src="script.js"></script>
 </body>
 </html>
