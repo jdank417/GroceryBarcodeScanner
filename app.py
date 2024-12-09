@@ -15,6 +15,7 @@ app.secret_key = 'supersecretkey'
 
 # Load Excel data
 EXCEL_FILE_PATH = 'Item Database/Inventory.xlsx'
+
 df = pd.read_excel(EXCEL_FILE_PATH)
 
 
@@ -38,6 +39,7 @@ def lookup_item(barcode_data):
 
 # Ensure the static/uploads folder exists
 os.makedirs(os.path.join("static", "uploads"), exist_ok=True)
+
 
 # Load pretrained MobileNet model from Keras and convert to TensorFlow Lite model
 model = tf.keras.applications.MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
@@ -80,6 +82,7 @@ def index():
     processed_image_path = None  # Initialize variable for processed image path
 
     if request.method == "POST":
+
         input_type = request.form.get("input_type")
 
         if input_type == "photo" and "file" in request.files:
@@ -92,12 +95,14 @@ def index():
             barcode_data = detect_barcode_with_pyzbar_first(file_path)
             if barcode_data:
                 item_name, item_price = lookup_item(barcode_data)
+
                 if item_name and item_price:
                     flash(f"Item: {item_name}, Price: ${item_price}")
                 else:
                     flash("Item not found in the Excel file")
             else:
                 flash("No barcode detected in the image.")
+
             os.remove(file_path)  # Remove original uploaded file
 
         elif input_type == "barcode":
@@ -110,6 +115,7 @@ def index():
                     flash("Item not found in the Excel file")
             else:
                 flash("Please enter a barcode ID")
+
 
     return render_template("index.html", processed_image_path=processed_image_path)
 
