@@ -3,23 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Barcode Scanner</title>
-    <script>
-        function showInputField() {
-            const selectOption = document.getElementById('input-select').value;
-            const photoInput = document.getElementById('photo-input');
-            const barcodeInput = document.getElementById('barcode-input');
-            if (selectOption === 'photo') {
-                photoInput.style.display = 'block';
-                barcodeInput.style.display = 'none';
-            } else if (selectOption === 'barcode') {
-                photoInput.style.display = 'none';
-                barcodeInput.style.display = 'block';
-            } else {
-                photoInput.style.display = 'none';
-                barcodeInput.style.display = 'none';
-            }
-        }
-    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -39,16 +22,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #000; /* Black background */
-            color: #FFD700; /* Yellow text */
+            background-color: #000;
+            color: #FFD700;
             padding: 20px;
-            border-bottom: 3px solid #FFD700; /* Thin yellow line */
+            border-bottom: 3px solid #FFD700;
         }
 
         header .logo {
             display: flex;
             flex-direction: column;
-            align-items: flex-start; /* Align text to the left */
+            align-items: flex-start;
         }
 
         header .logo-text {
@@ -57,8 +40,8 @@
         }
 
         header .subtitle {
-            font-size: 16px; /* Smaller font size */
-            color: #FFD700; /* Yellow text */
+            font-size: 16px;
+            color: #FFD700;
         }
 
         header nav {
@@ -71,19 +54,19 @@
             padding: 0;
             display: flex;
             justify-content: space-between;
-            width: 200px; /* Adjusted width for spacing */
+            width: 200px;
         }
 
         header nav ul li a {
-            color: #FFD700; /* Bright yellow accent */
+            color: #FFD700;
             text-decoration: none;
             font-weight: bold;
-            transition: color 0.6s ease, background-color 0.6s ease; /* Smoother animation */
+            transition: color 0.6s ease, background-color 0.6s ease;
         }
 
         header nav ul li a:hover {
-            color: #000; /* Change text to black */
-            background-color: #FFD700; /* Yellow background */
+            color: #000;
+            background-color: #FFD700;
             padding: 5px 10px;
             border-radius: 5px;
         }
@@ -102,22 +85,21 @@
 
         h1 {
             text-align: center;
-            color: #FFD700; /* More saturated yellow */
-            font-family: 'Courier New', Courier, monospace; /* Fancy text style */
+            color: #FFD700;
+            font-family: 'Courier New', Courier, monospace;
             font-size: 36px;
             font-weight: bold;
-            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Add a shadow for a fancy effect */
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
         }
 
-
         .upload-section, .results-section {
-            background-color: rgba(255, 255, 255, 0.8); /* Make sections slightly transparent */
+            background-color: rgba(255, 255, 255, 0.8);
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             max-width: 600px;
             margin: 0 auto 30px auto;
-            border-top: 5px solid #FFD700; /* Yellow highlight */
+            border-top: 5px solid #FFD700;
         }
 
         .upload-section label {
@@ -145,7 +127,7 @@
         }
 
         .upload-section button, .results-section button {
-            background-color: #FFD700; /* Yellow button */
+            background-color: #FFD700;
             color: #333;
             border: none;
             padding: 10px 20px;
@@ -172,11 +154,11 @@
         }
 
         footer {
-            background-color: #000; /* Black background */
+            background-color: #000;
             color: white;
             text-align: center;
             padding: 10px 0;
-            border-top: 3px solid #FFD700; /* Thin yellow line */
+            border-top: 3px solid #FFD700;
         }
 
         footer a {
@@ -190,13 +172,13 @@
 
         /* Contact Section Styles */
         .contact-section {
-            background-color: rgba(255, 255, 255, 0.8); /* Slightly transparent */
+            background-color: rgba(255, 255, 255, 0.8);
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             max-width: 600px;
             margin: 0 auto 30px auto;
-            border-top: 5px solid #FFD700; /* Yellow highlight */
+            border-top: 5px solid #FFD700;
         }
 
         .contact-section h2 {
@@ -221,7 +203,126 @@
         .contact-section ul li a:hover {
             text-decoration: underline;
         }
+
+        /* Camera Input Styles */
+        #camera-input {
+            position: relative;
+            text-align: center;
+            color: #fff;
+        }
+
+        #camera-stream {
+            width: 100%;
+            height: auto;
+            filter: brightness(50%);
+        }
+
+        #camera-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid #FFD700;
+            border-radius: 15px;
+            width: 80%;
+            height: 80%;
+            z-index: 2;
+        }
+
+        .camera-buttons {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .camera-buttons button {
+            background-color: #FFD700;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .camera-buttons button:hover {
+            background-color: #e6c200;
+        }
     </style>
+    <script>
+        function showInputField() {
+            const selectOption = document.getElementById('input-select').value;
+            const photoInput = document.getElementById('photo-input');
+            const barcodeInput = document.getElementById('barcode-input');
+            const cameraInput = document.getElementById('camera-input');
+
+            photoInput.style.display = 'none';
+            barcodeInput.style.display = 'none';
+            cameraInput.style.display = 'none';
+
+            if (selectOption === 'photo') {
+                photoInput.style.display = 'block';
+            } else if (selectOption === 'barcode') {
+                barcodeInput.style.display = 'block';
+            } else if (selectOption === 'camera') {
+                cameraInput.style.display = 'block';
+                startCamera();
+            }
+        }
+
+        function startCamera() {
+            const video = document.getElementById('camera-stream');
+            const constraints = { video: true };
+
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then((stream) => {
+                    video.srcObject = stream;
+                })
+                .catch((err) => {
+                    console.error('Error accessing camera: ' + err);
+                });
+        }
+
+        function captureImage() {
+            const video = document.getElementById('camera-stream');
+            const canvas = document.getElementById('camera-canvas');
+            const context = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            document.getElementById('take-photo').style.display = 'none';
+            document.getElementById('cancel-photo').style.display = 'inline-block';
+            document.getElementById('retake-photo').style.display = 'inline-block';
+            document.getElementById('proceed-photo').style.display = 'inline-block';
+        }
+
+        function resetCameraButtons() {
+            document.getElementById('take-photo').style.display = 'inline-block';
+            document.getElementById('cancel-photo').style.display = 'none';
+            document.getElementById('retake-photo').style.display = 'none';
+            document.getElementById('proceed-photo').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('input-select').addEventListener('change', showInputField);
+
+            document.getElementById('take-photo').addEventListener('click', captureImage);
+
+            document.getElementById('cancel-photo').addEventListener('click', resetCameraButtons);
+
+                       document.getElementById('retake-photo').style.display = 'none';
+            document.getElementById('proceed-photo').style.display = 'none';
+        });
+
+        document.getElementById('proceed-photo').addEventListener('click', function() {
+            // Add functionality to process the image and look up the barcode
+        });
+    </script>
 </head>
 <body>
 
@@ -248,10 +349,11 @@
         <section class="upload-section">
             <form method="post" enctype="multipart/form-data">
                 <label for="input-select">Select Input Type:</label>
-                <select id="input-select" name="input_type" onchange="showInputField()" required>
+                <select id="input-select" name="input_type" required>
                     <option value="">Select an option</option>
                     <option value="photo">Upload Photo</option>
                     <option value="barcode">Enter Barcode ID</option>
+                    <option value="camera">Use Camera</option> <!-- New Camera Option -->
                 </select>
                 <!-- Photo Input -->
                 <div id="photo-input" style="display: none;">
@@ -265,11 +367,22 @@
                     <input type="text" name="barcode_id" id="barcode-id" placeholder="Enter Barcode ID" maxlength="20">
                     <button type="submit">Submit</button>
                 </div>
+                <!-- Camera Input -->
+                <div id="camera-input" style="display: none;">
+                    <video id="camera-stream" autoplay></video>
+                    <canvas id="camera-canvas" style="display: none;"></canvas>
+                    <div id="camera-frame"></div>
+                    <div class="camera-buttons">
+                        <button id="take-photo">Take Photo</button>
+                        <button id="cancel-photo" style="display: none;">Cancel</button>
+                        <button id="retake-photo" style="display: none;">Retake</button>
+                        <button id="proceed-photo" style="display: none;">Proceed</button>
+                    </div>
+                </div>
             </form>
         </section>
 
         <section class="results-section">
-            <!-- Display flash messages for success or error feedback -->
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
                     <ul>
@@ -280,7 +393,6 @@
                 {% endif %}
             {% endwith %}
 
-            <!-- Display the preprocessed image in a smaller size if available -->
             {% if processed_image_path %}
                 <h2>Processed Image</h2>
                 <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
@@ -288,7 +400,6 @@
             {% endif %}
         </section>
 
-        <!-- Contact Section -->
         <section id="contact" class="contact-section">
             <h2>Contact Us</h2>
             <ul>
