@@ -1,13 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
-from PIL import Image
-import pandas as pd
 import os
-from pyzbar.pyzbar import decode
+from functools import lru_cache
+
 import cv2
 import numpy as np
+import pandas as pd
 import tensorflow as tf
+from flask import Flask, render_template, request, redirect, flash
+from pyzbar.pyzbar import decode
 from tensorflow.keras.preprocessing import image
-from functools import lru_cache
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -39,7 +39,6 @@ def lookup_item(barcode_data):
 
 # Ensure the static/uploads folder exists
 os.makedirs(os.path.join("static", "uploads"), exist_ok=True)
-
 
 # Load pretrained MobileNet model from Keras and convert to TensorFlow Lite model
 model = tf.keras.applications.MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
@@ -103,6 +102,26 @@ def index():
             else:
                 flash("No barcode detected in the image.")
 
+            os.remove(file_path)
+
+        elif input_type == "camera" and "file" in request.files:
+            file = request.files["file"]
+            if file.filename == "":
+                flash("No selected file")
+                return redirect(request.url)
+            file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+            file.save(file_path)
+            barcode_data = detect_barcode_with_pyzbar_first(file_path)
+            if barcode_data:
+                item_name, item_price = lookup_item(barcode_data)
+
+                if item_name and item_price:
+                    flash(f"Item: {item_name}, Price: ${item_price}")
+                else:
+                    flash("Item not found in the Excel file")
+            else:
+                flash("No barcode detected in the image.")
+
             os.remove(file_path)  # Remove original uploaded file
 
         elif input_type == "barcode":
@@ -116,10 +135,9 @@ def index():
             else:
                 flash("Please enter a barcode ID")
 
-
     return render_template("index.html", processed_image_path=processed_image_path)
 
 
 if __name__ == "__main__":
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    app.run(host="0.0.0.0", port=44456, debug=True, ssl_context=('cert.pem', 'key.pem'))

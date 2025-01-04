@@ -3,416 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <title>Barcode Scanner</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            color: #333;
-            background-image: url('../static/uploads/168227_hero.jpg');
-            background-size: cover;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            background-color: rgba(0, 0, 0, 0.5);
-            background-blend-mode: darken;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #000;
-            color: #FFD700;
-            padding: 20px;
-            border-bottom: 3px solid #FFD700;
-        }
-
-        header .logo {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        header .logo-text {
-            font-size: 36px;
-            font-weight: bold;
-        }
-
-        header .subtitle {
-            font-size: 16px;
-            color: #FFD700;
-        }
-
-        header nav {
-            text-align: right;
-        }
-
-        header nav ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: space-between;
-            width: 200px;
-        }
-
-        header nav ul li a {
-            color: #FFD700;
-            text-decoration: none;
-            font-weight: bold;
-            transition: color 0.6s ease, background-color 0.6s ease;
-        }
-
-        header nav ul li a:hover {
-            color: #000;
-            background-color: #FFD700;
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-
-        main {
-            padding: 20px;
-            flex: 1;
-        }
-
-        .logo-img {
-            display: block;
-            margin: 20px auto;
-            width: 150px;
-            height: auto;
-        }
-
-        h1 {
-            text-align: center;
-            color: #FFD700;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 36px;
-            font-weight: bold;
-            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
-        }
-
-        .upload-section, .results-section {
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            margin: 0 auto 30px auto;
-            border-top: 5px solid #FFD700;
-        }
-
-        .upload-section label {
-            display: block;
-            margin: 10px 0 5px;
-            font-weight: bold;
-        }
-
-        .upload-section input[type="text"],
-        .upload-section input[type="file"] {
-            display: block;
-            width: 100%;
-            max-width: 400px;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        .upload-section p {
-            text-align: center;
-            margin: 10px 0;
-            font-style: italic;
-            color: #666;
-        }
-
-        .upload-section button, .results-section button {
-            background-color: #FFD700;
-            color: #333;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        .upload-section button:hover, .results-section button:hover {
-            background-color: #e6c200;
-        }
-
-        .results-section h2 {
-            margin-bottom: 15px;
-            color: #800000;
-        }
-
-        .results-section img {
-            width: 200px;
-            height: auto;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-top: 10px;
-        }
-
-        footer {
-            background-color: #000;
-            color: white;
-            text-align: center;
-            padding: 10px 0;
-            border-top: 3px solid #FFD700;
-        }
-
-        footer a {
-            color: #ff4500;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Contact Section Styles */
-        .contact-section {
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            margin: 0 auto 30px auto;
-            border-top: 5px solid #FFD700;
-        }
-
-        .contact-section h2 {
-            color: #800000;
-            margin-bottom: 20px;
-        }
-
-        .contact-section ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .contact-section ul li {
-            margin-bottom: 10px;
-        }
-
-        .contact-section ul li a {
-            color: #333;
-            text-decoration: none;
-        }
-
-        .contact-section ul li a:hover {
-            text-decoration: underline;
-        }
-
-        /* Camera Input Styles */
-        #camera-input {
-            position: relative;
-            text-align: center;
-            color: #fff;
-        }
-
-        #camera-stream {
-            width: 100%;
-            height: auto;
-            filter: brightness(50%);
-        }
-
-        #camera-frame {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            border: 2px solid #FFD700;
-            border-radius: 15px;
-            width: 80%;
-            height: 80%;
-            z-index: 2;
-        }
-
-        .camera-buttons {
-            position: absolute;
-            bottom: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .camera-buttons button {
-            background-color: #FFD700;
-            color: #333;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        .camera-buttons button:hover {
-            background-color: #e6c200;
-        }
-    </style>
-    <script>
-        function showInputField() {
-            const selectOption = document.getElementById('input-select').value;
-            const photoInput = document.getElementById('photo-input');
-            const barcodeInput = document.getElementById('barcode-input');
-            const cameraInput = document.getElementById('camera-input');
-
-            photoInput.style.display = 'none';
-            barcodeInput.style.display = 'none';
-            cameraInput.style.display = 'none';
-
-            if (selectOption === 'photo') {
-                photoInput.style.display = 'block';
-            } else if (selectOption === 'barcode') {
-                barcodeInput.style.display = 'block';
-            } else if (selectOption === 'camera') {
-                cameraInput.style.display = 'block';
-                startCamera();
-            }
-        }
-
-        function startCamera() {
-            const video = document.getElementById('camera-stream');
-            const constraints = { video: true };
-
-            navigator.mediaDevices.getUserMedia(constraints)
-                .then((stream) => {
-                    video.srcObject = stream;
-                })
-                .catch((err) => {
-                    console.error('Error accessing camera: ' + err);
-                });
-        }
-
-        function captureImage() {
-            const video = document.getElementById('camera-stream');
-            const canvas = document.getElementById('camera-canvas');
-            const context = canvas.getContext('2d');
-
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            document.getElementById('take-photo').style.display = 'none';
-            document.getElementById('cancel-photo').style.display = 'inline-block';
-            document.getElementById('retake-photo').style.display = 'inline-block';
-            document.getElementById('proceed-photo').style.display = 'inline-block';
-        }
-
-        function resetCameraButtons() {
-            document.getElementById('take-photo').style.display = 'inline-block';
-            document.getElementById('cancel-photo').style.display = 'none';
-            document.getElementById('retake-photo').style.display = 'none';
-            document.getElementById('proceed-photo').style.display = 'none';
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('input-select').addEventListener('change', showInputField);
-
-            document.getElementById('take-photo').addEventListener('click', captureImage);
-
-            document.getElementById('cancel-photo').addEventListener('click', resetCameraButtons);
-
-                       document.getElementById('retake-photo').style.display = 'none';
-            document.getElementById('proceed-photo').style.display = 'none';
-        });
-
-        document.getElementById('proceed-photo').addEventListener('click', function() {
-            // Add functionality to process the image and look up the barcode
-        });
-    </script>
+    <link rel="stylesheet" href="../static/assets/style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 </head>
 <body>
 
-    <header>
-        <div class="logo">
-            <div class="logo-text">Wentworth</div>
-            <div class="subtitle">Institute of Technology</div>
-        </div>
-        <nav>
-            <ul>
-                <li><a href="#">Home</a></li>
-                <li><a href="#">About</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
+<header>
+    <div class="logo">
+        <div class="logo-text">Wentworth</div>
+        <div class="subtitle">Institute of Technology</div>
+    </div>
+    <nav>
+        <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+</header>
 
-    <main>
-        <div class="logo-container">
-            <img src="../static/uploads/7757c004ef50b4f4310530.png" alt="Logo" class="logo-img">
-        </div>
-        <h1>Upload an Image with Barcode</h1>
+<main>
+    <div class="logo-container">
+        <img src="../static/uploads/7757c004ef50b4f4310530.png" alt="Logo" class="logo-img">
+    </div>
+    <h1>Upload an Image with Barcode</h1>
 
-        <section class="upload-section">
-            <form method="post" enctype="multipart/form-data">
-                <label for="input-select">Select Input Type:</label>
-                <select id="input-select" name="input_type" required>
-                    <option value="">Select an option</option>
-                    <option value="photo">Upload Photo</option>
-                    <option value="barcode">Enter Barcode ID</option>
-                    <option value="camera">Use Camera</option> <!-- New Camera Option -->
-                </select>
-                <!-- Photo Input -->
-                <div id="photo-input" style="display: none;">
-                    <label for="file-upload">Upload Photo:</label>
-                    <input type="file" name="file" id="file-upload">
-                    <button type="submit">Upload</button>
+    <section class="upload-section">
+        <form id="captureForm" method="post" enctype="multipart/form-data">
+            <label for="input-select">Select Input Type:</label>
+            <select id="input-select" name="input_type" required>
+                <option value="">Select an option</option>
+                <option value="photo">Upload Photo</option>
+                <option value="barcode">Enter Barcode ID</option>
+                <option value="camera">Use Camera</option> <!-- New Camera Option -->
+            </select>
+            <!-- Photo Input -->
+            <div id="photo-input" style="display: none;">
+                <label for="file-upload">Upload Photo:</label>
+                <input type="file" name="file" id="file-upload">
+                <button type="submit">Upload</button>
+            </div>
+            <!-- Text Input -->
+            <div id="barcode-input" style="display: none;">
+                <label for="barcode-id">Enter Barcode ID:</label>
+                <input type="text" name="barcode_id" id="barcode-id" placeholder="Enter Barcode ID" maxlength="20">
+                <button type="submit">Submit</button>
+            </div>
+            <!-- Camera Input -->
+            <div id="camera-input" style="display: none;">
+                <video id="camera-stream" autoplay></video>
+                <canvas id="camera-canvas" style="display: none;"></canvas>
+                <div id="camera-frame"></div>
+                <div class="camera-buttons">
+                    <button id="take-photo" type="button">Take Photo</button>
+                    <button id="cancel-photo" style="display: none;" type="button">Cancel</button>
+                    <button id="retake-photo" style="display: none;" type="button">Retake</button>
+                    <button id="proceed-photo" style="display: none;" type="submit">Proceed</button>
                 </div>
-                <!-- Text Input -->
-                <div id="barcode-input" style="display: none;">
-                    <label for="barcode-id">Enter Barcode ID:</label>
-                    <input type="text" name="barcode_id" id="barcode-id" placeholder="Enter Barcode ID" maxlength="20">
-                    <button type="submit">Submit</button>
-                </div>
-                <!-- Camera Input -->
-                <div id="camera-input" style="display: none;">
-                    <video id="camera-stream" autoplay></video>
-                    <canvas id="camera-canvas" style="display: none;"></canvas>
-                    <div id="camera-frame"></div>
-                    <div class="camera-buttons">
-                        <button id="take-photo">Take Photo</button>
-                        <button id="cancel-photo" style="display: none;">Cancel</button>
-                        <button id="retake-photo" style="display: none;">Retake</button>
-                        <button id="proceed-photo" style="display: none;">Proceed</button>
-                    </div>
-                </div>
-            </form>
-        </section>
+            </div>
+        </form>
+    </section>
 
-        <section class="results-section">
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <ul>
-                        {% for message in messages %}
-                            <li>{{ message }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            {% endwith %}
+    <section class="results-section">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
 
-            {% if processed_image_path %}
-                <h2>Processed Image</h2>
-                <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
-                     alt="Processed Barcode Image" style="width: 200px; height: auto;">
-            {% endif %}
-        </section>
+        {% if processed_image_path %}
+        <h2>Processed Image</h2>
+        <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
+             alt="Processed Barcode Image" style="width: 200px; height: auto;">
+        {% endif %}
+    </section>
 
-        <section id="contact" class="contact-section">
-            <h2>Contact Us</h2>
-            <ul>
-                <li>example: <a href="mailto:example@example.com">example@example.com</a>, +1 (123) 456-7890</li>
-                <li>Jason: <a href="mailto:dankj@wit.edu">dankj@wit.edu</a>, +1 (631) 603-8283</li>
-                <li>Aliya: <a href="mailto:vagapovaa@wit.edu">vagapovaa@wit.edu</a>, +1 (747) 242-8882</li>
-            </ul>
-        </section>
-    </main>
+    <section id="contact" class="contact-section">
+        <h2>Contact Us</h2>
+        <ul>
+            <li>example: <a href="mailto:example@example.com">example@example.com</a>, +1 (123) 456-7890</li>
+            <li>Jason: <a href="mailto:dankj@wit.edu">dankj@wit.edu</a>, +1 (631) 603-8283</li>
+            <li>Aliya: <a href="mailto:vagapovaa@wit.edu">vagapovaa@wit.edu</a>, +1 (747) 242-8882</li>
+        </ul>
+    </section>
+</main>
 
-    <footer>
-        <p>&copy; 2024 Wentworth Institute of Technology. All Rights Reserved.</p>
-    </footer>
+<footer>
+    <p>&copy; 2024 Wentworth Institute of Technology. All Rights Reserved.</p>
+</footer>
 
+<script src="../static/assets/script.js"></script>
 </body>
 </html>
