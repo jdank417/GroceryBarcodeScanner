@@ -1,0 +1,167 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #333;
+    background-color: #f9f9f9;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #800000; /* Wentworth's red */
+    padding: 10px 20px;
+    color: #fff;
+}
+
+header .logo img {
+    max-height: 50px;
+}
+
+header nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 15px;
+}
+
+header nav ul li a {
+    color: #FFD700; /* Bright yellow accent */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+main {
+    padding: 20px;
+}
+
+.upload-section {
+    text-align: center;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin: 30px auto;
+    border-top: 5px solid #FFD700; /* Yellow highlight */
+}
+
+.upload-section button {
+    background-color: #FFD700; /* Yellow button */
+    color: #333;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+    margin: 5px;
+}
+
+.upload-section button:hover {
+    background-color: #e6c200;
+}
+
+.results-section {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    max-width: 600px;
+    margin: 30px auto;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-top: 5px solid #FFD700;
+}
+
+.results-section h2 {
+    color: #800000;
+}
+
+#results {
+    font-size: 16px;
+    color: #333;
+}
+
+/* Input Selection Styles */
+.input-selection {
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.input-selection button {
+    padding: 10px 20px;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+/* Camera Input Styles */
+#camera-input {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    max-width: 600px;
+    border: 2px solid #ccc;
+    background-color: #fff;
+}
+
+#camera-stream {
+    width: 100%;
+    height: auto;
+    border: 2px solid #ccc;
+}
+
+.camera-buttons {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+}
+
+.camera-buttons button {
+    padding: 10px;
+    font-size: 1em;
+}
+
+/* Other Input Styles */
+.text-input,
+.file-input,
+.url-input {
+    margin: 20px 0;
+}
+
+/* Contact Section Styles */
+.contact-section {
+    background-color: #333;
+    color: #fff;
+    padding: 20px 0;
+}
+
+.contact-section h2 {
+    margin: 0 0 10px 0;
+}
+
+.contact-section ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.contact-section ul li {
+    margin: 5px 0;
+}
+
+.contact-section ul li a {
+    color: #fff;
+    text-decoration: none;
+}
+
+/* Footer Styles */
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+}
