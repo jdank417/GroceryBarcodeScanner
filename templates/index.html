@@ -1,307 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Barcode Scanner</title>
-    <script>
-        function showInputField() {
-            const selectOption = document.getElementById('input-select').value;
-            const photoInput = document.getElementById('photo-input');
-            const barcodeInput = document.getElementById('barcode-input');
-            if (selectOption === 'photo') {
-                photoInput.style.display = 'block';
-                barcodeInput.style.display = 'none';
-            } else if (selectOption === 'barcode') {
-                photoInput.style.display = 'none';
-                barcodeInput.style.display = 'block';
-            } else {
-                photoInput.style.display = 'none';
-                barcodeInput.style.display = 'none';
-            }
-        }
-    </script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            color: #333;
-            background-image: url('../static/uploads/168227_hero.jpg');
-            background-size: cover;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            background-color: rgba(0, 0, 0, 0.5);
-            background-blend-mode: darken;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #000; /* Black background */
-            color: #FFD700; /* Yellow text */
-            padding: 20px;
-            border-bottom: 3px solid #FFD700; /* Thin yellow line */
-        }
-
-        header .logo {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start; /* Align text to the left */
-        }
-
-        header .logo-text {
-            font-size: 36px;
-            font-weight: bold;
-        }
-
-        header .subtitle {
-            font-size: 16px; /* Smaller font size */
-            color: #FFD700; /* Yellow text */
-        }
-
-        header nav {
-            text-align: right;
-        }
-
-        header nav ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: space-between;
-            width: 200px; /* Adjusted width for spacing */
-        }
-
-        header nav ul li a {
-            color: #FFD700; /* Bright yellow accent */
-            text-decoration: none;
-            font-weight: bold;
-            transition: color 0.6s ease, background-color 0.6s ease; /* Smoother animation */
-        }
-
-        header nav ul li a:hover {
-            color: #000; /* Change text to black */
-            background-color: #FFD700; /* Yellow background */
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-
-        main {
-            padding: 20px;
-            flex: 1;
-        }
-
-        .logo-img {
-            display: block;
-            margin: 20px auto;
-            width: 150px;
-            height: auto;
-        }
-
-        h1 {
-            text-align: center;
-            color: #FFD700; /* More saturated yellow */
-            font-family: 'Courier New', Courier, monospace; /* Fancy text style */
-            font-size: 36px;
-            font-weight: bold;
-            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Add a shadow for a fancy effect */
-        }
-
-
-        .upload-section, .results-section {
-            background-color: rgba(255, 255, 255, 0.8); /* Make sections slightly transparent */
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            margin: 0 auto 30px auto;
-            border-top: 5px solid #FFD700; /* Yellow highlight */
-        }
-
-        .upload-section label {
-            display: block;
-            margin: 10px 0 5px;
-            font-weight: bold;
-        }
-
-        .upload-section input[type="text"],
-        .upload-section input[type="file"] {
-            display: block;
-            width: 100%;
-            max-width: 400px;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        .upload-section p {
-            text-align: center;
-            margin: 10px 0;
-            font-style: italic;
-            color: #666;
-        }
-
-        .upload-section button, .results-section button {
-            background-color: #FFD700; /* Yellow button */
-            color: #333;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        .upload-section button:hover, .results-section button:hover {
-            background-color: #e6c200;
-        }
-
-        .results-section h2 {
-            margin-bottom: 15px;
-            color: #800000;
-        }
-
-        .results-section img {
-            width: 200px;
-            height: auto;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-top: 10px;
-        }
-
-        footer {
-            background-color: #000; /* Black background */
-            color: white;
-            text-align: center;
-            padding: 10px 0;
-            border-top: 3px solid #FFD700; /* Thin yellow line */
-        }
-
-        footer a {
-            color: #ff4500;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Contact Section Styles */
-        .contact-section {
-            background-color: rgba(255, 255, 255, 0.8); /* Slightly transparent */
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            margin: 0 auto 30px auto;
-            border-top: 5px solid #FFD700; /* Yellow highlight */
-        }
-
-        .contact-section h2 {
-            color: #800000;
-            margin-bottom: 20px;
-        }
-
-        .contact-section ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .contact-section ul li {
-            margin-bottom: 10px;
-        }
-
-        .contact-section ul li a {
-            color: #333;
-            text-decoration: none;
-        }
-
-        .contact-section ul li a:hover {
-            text-decoration: underline;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>SKU Lookup</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+    header {
+      background-color: #000;
+      color: #FFD700;
+      padding: 20px;
+      border-bottom: 3px solid #FFD700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header .logo-text {
+      font-size: 36px;
+      font-weight: bold;
+    }
+    main {
+      padding: 20px;
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #FFD700;
+    }
+    form {
+      text-align: center;
+      margin: 20px 0;
+    }
+    input[type="text"] {
+      padding: 8px;
+      width: 60%;
+      margin-right: 10px;
+    }
+    button {
+      background-color: #FFD700;
+      border: none;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #e6c200;
+    }
+    .messages {
+      margin: 20px auto;
+      text-align: center;
+      color: red;
+    }
+    footer {
+      background-color: #000;
+      color: #fff;
+      text-align: center;
+      padding: 10px 0;
+      border-top: 3px solid #FFD700;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <div class="logo-text">Wentworth</div>
+    <nav>
+      <!-- Minimal nav, or you can remove entirely -->
+    </nav>
+  </header>
 
-    <header>
-        <div class="logo">
-            <div class="logo-text">Wentworth</div>
-            <div class="subtitle">Institute of Technology</div>
-        </div>
-        <nav>
-            <ul>
-                <li><a href="#">Home</a></li>
-                <li><a href="#">About</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
+  <main>
+    <h1>SKU Lookup</h1>
+    <form method="POST">
+      <input type="text" name="barcode_id" placeholder="Enter SKU (numeric)" maxlength="20">
+      <button type="submit">Submit</button>
+    </form>
 
-    <main>
-        <div class="logo-container">
-            <img src="../static/uploads/7757c004ef50b4f4310530.png" alt="Logo" class="logo-img">
-        </div>
-        <h1>Upload an Image with Barcode</h1>
+    <!-- Flash messages -->
+    <div class="messages">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <ul>
+            {% for message in messages %}
+              <li>{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+    </div>
+  </main>
 
-        <section class="upload-section">
-            <form method="post" enctype="multipart/form-data">
-                <label for="input-select">Select Input Type:</label>
-                <select id="input-select" name="input_type" onchange="showInputField()" required>
-                    <option value="">Select an option</option>
-                    <option value="photo">Upload Photo</option>
-                    <option value="barcode">Enter Barcode ID</option>
-                </select>
-                <!-- Photo Input -->
-                <div id="photo-input" style="display: none;">
-                    <label for="file-upload">Upload Photo:</label>
-                    <input type="file" name="file" id="file-upload">
-                    <button type="submit">Upload</button>
-                </div>
-                <!-- Text Input -->
-                <div id="barcode-input" style="display: none;">
-                    <label for="barcode-id">Enter Barcode ID:</label>
-                    <input type="text" name="barcode_id" id="barcode-id" placeholder="Enter Barcode ID" maxlength="20">
-                    <button type="submit">Submit</button>
-                </div>
-            </form>
-        </section>
-
-        <section class="results-section">
-            <!-- Display flash messages for success or error feedback -->
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <ul>
-                        {% for message in messages %}
-                            <li>{{ message }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            {% endwith %}
-
-            <!-- Display the preprocessed image in a smaller size if available -->
-            {% if processed_image_path %}
-                <h2>Processed Image</h2>
-                <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
-                     alt="Processed Barcode Image" style="width: 200px; height: auto;">
-            {% endif %}
-        </section>
-
-        <!-- Contact Section -->
-        <section id="contact" class="contact-section">
-            <h2>Contact Us</h2>
-            <ul>
-                <li>example: <a href="mailto:example@example.com">example@example.com</a>, +1 (123) 456-7890</li>
-                <li>Jason: <a href="mailto:dankj@wit.edu">dankj@wit.edu</a>, +1 (631) 603-8283</li>
-                <li>Aliya: <a href="mailto:vagapovaa@wit.edu">vagapovaa@wit.edu</a>, +1 (747) 242-8882</li>
-            </ul>
-        </section>
-    </main>
-
-    <footer>
-        <p>&copy; 2024 Wentworth Institute of Technology. All Rights Reserved.</p>
-    </footer>
-
+  <footer>
+    <p>&copy; 2024 Wentworth Institute of Technology. All Rights Reserved.</p>
+  </footer>
 </body>
 </html>
