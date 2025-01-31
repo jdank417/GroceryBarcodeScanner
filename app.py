@@ -7,11 +7,17 @@ app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
 # Path to your Excel file
-EXCEL_FILE_PATH = 'Item Database/Inventory.xlsx'
-df = pd.read_excel(EXCEL_FILE_PATH)
+EXCEL_FILE_PATH = 'Item Database/output.xlsx'
 
-# Convert "ItemNumber" to string, strip spaces
-df["ItemNumber"] = df["ItemNumber"].astype(str).str.strip()
+# Read the Excel file and force "ItemNumber" to be read as a string
+df = pd.read_excel(EXCEL_FILE_PATH, dtype={'ItemNumber': str})
+
+# Clean the "ItemNumber" column: remove any trailing '.0' and extra spaces
+df["ItemNumber"] = (
+    df["ItemNumber"]
+    .str.replace(r'\.0$', '', regex=True)
+    .str.strip()
+)
 
 
 @lru_cache(maxsize=100)
@@ -20,8 +26,8 @@ def lookup_item(barcode_data):
     Look up item name and price in the Excel dataframe based on the SKU.
     Returns (item_name, item_price) or (None, None) if not found.
     """
-    # Ensure the input barcode_data is treated as string
     barcode_data = str(barcode_data).strip()
+    print(f"Looking up barcode: '{barcode_data}'")  # Debug print
 
     # Filter the dataframe
     item_info = df[df["ItemNumber"] == barcode_data]
@@ -36,7 +42,6 @@ def lookup_item(barcode_data):
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        # Get the SKU/Barcode ID from form
         barcode_id = request.form.get("barcode_id")
         if barcode_id:
             item_name, item_price = lookup_item(barcode_id)
@@ -46,11 +51,8 @@ def index():
                 flash("Item not found in the Excel file.")
         else:
             flash("Please enter a valid SKU (barcode).")
-
     return render_template("index.html")
 
 
 if __name__ == "__main__":
-    # Make sure the Excel file path is correct
-    # and the app can read from 'Item Database/Inventory.xlsx'
     app.run(host="0.0.0.0", port=8000)
