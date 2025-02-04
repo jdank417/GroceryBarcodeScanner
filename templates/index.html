@@ -2,9 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Barcode Scanner</title>
+  <title>Barcode Scanner with Capture & Crop</title>
   <!-- Include QuaggaJS from CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+
+  <!-- Include CropperJS CSS and JS from CDN (no SRI) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+
   <style>
     /* Global Styles */
     body {
@@ -17,7 +22,7 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0,0,0,0.5);
       background-blend-mode: darken;
     }
     header {
@@ -78,13 +83,13 @@
       font-family: 'Courier New', Courier, monospace;
       font-size: 36px;
       font-weight: bold;
-      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+      text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
     }
     .upload-section, .results-section, .contact-section {
-      background-color: rgba(255, 255, 255, 0.8);
+      background-color: rgba(255,255,255,0.8);
       padding: 30px;
       border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       max-width: 600px;
       margin: 0 auto 30px auto;
       border-top: 5px solid #FFD700;
@@ -121,7 +126,7 @@
       border: 2px solid #FFD700;
       padding: 20px;
       border-radius: 10px;
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
       max-width: 500px;
       margin: 20px auto;
       text-align: center;
@@ -137,14 +142,8 @@
       color: #333;
     }
     @keyframes popIn {
-      0% {
-        opacity: 0;
-        transform: scale(0.8);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1);
-      }
+      0% { opacity: 0; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
     }
     .results-section h2 {
       margin-bottom: 15px;
@@ -168,34 +167,17 @@
       padding: 10px 0;
       border-top: 3px solid #FFD700;
     }
-    footer a {
-      color: #ff4500;
-      text-decoration: none;
-    }
-    footer a:hover {
-      text-decoration: underline;
-    }
-    .contact-section h2 {
-      color: #800000;
-      margin-bottom: 20px;
-    }
-    .contact-section ul {
-      list-style: none;
-      padding: 0;
-    }
-    .contact-section ul li {
-      margin-bottom: 10px;
-    }
-    .contact-section ul li a {
-      color: #333;
-      text-decoration: none;
-    }
-    .contact-section ul li a:hover {
-      text-decoration: underline;
-    }
-    /* Modal overlay for the scanner */
+    footer a { color: #ff4500; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    .contact-section h2 { color: #800000; margin-bottom: 20px; }
+    .contact-section ul { list-style: none; padding: 0; }
+    .contact-section ul li { margin-bottom: 10px; }
+    .contact-section ul li a { color: #333; text-decoration: none; }
+    .contact-section ul li a:hover { text-decoration: underline; }
+
+    /* Modal for live scanning and capture */
     .modal {
-      display: none; /* Hidden by default */
+      display: none;
       position: fixed;
       z-index: 1000;
       left: 0;
@@ -203,15 +185,15 @@
       width: 100%;
       height: 100%;
       overflow: auto;
-      background-color: rgba(0,0,0,0.7); /* Semi-transparent background */
+      background-color: rgba(0,0,0,0.7);
     }
     .modal-content {
       background-color: #fefefe;
       margin: 5% auto;
       padding: 20px;
       border-radius: 10px;
-      width: 80%;
-      max-width: 600px;
+      width: 90%;
+      max-width: 800px; /* Make it wider for the video feed */
       position: relative;
     }
     .close {
@@ -223,15 +205,70 @@
       color: #aaa;
       cursor: pointer;
     }
-    .close:hover {
-      color: #000;
+    .close:hover { color: #000; }
+
+    /* Container for live scanning */
+    #scannerContainer {
+      position: relative;
+      width: 100%;
+      max-height: 600px; /* Adjust if needed */
+      background-color: #000;
+      overflow: hidden;
     }
-    /* Scanner container inside modal */
     #scanner-container {
       width: 100%;
-      height: 400px;
-      background-color: #000;
+      height: 100%;
     }
+    /* Ensure the video doesn't overflow and keeps aspect ratio */
+    #scanner-container video {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    /* Capture button overlay */
+    .capture-button {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      padding: 8px 16px;
+      background: #FFD700;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      opacity: 0.9;
+      pointer-events: auto;
+    }
+    .capture-button:hover { background: #e6c200; }
+
+    /* Container for captured image & cropping */
+    #capturedContainer {
+      display: none;
+      margin-top: 15px;
+      text-align: center;
+    }
+    #capturedImage {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    /* Buttons inside captured image container */
+    .modal-buttons {
+      margin-top: 10px;
+    }
+    .modal-buttons button {
+      padding: 8px 16px;
+      margin: 5px;
+      background: #FFD700;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .modal-buttons button:hover { background: #e6c200; }
   </style>
 </head>
 <body>
@@ -255,12 +292,13 @@
     </div>
     <h1>Enter Barcode ID</h1>
 
+    <!-- Form for barcode ID -->
     <section class="upload-section">
-      <form method="post" enctype="multipart/form-data">
+      <form method="post" enctype="multipart/form-data" id="barcodeForm">
         <label for="barcode-id">Enter Barcode ID:</label>
         <input type="text" name="barcode_id" id="barcode-id" placeholder="Enter Barcode ID" maxlength="20" required>
         <button type="submit">Submit</button>
-        <!-- Button to open scanner modal -->
+        <!-- Button to open scanning modal -->
         <button type="button" onclick="openScannerModal()">Scan Barcode</button>
       </form>
     </section>
@@ -275,14 +313,12 @@
           </ul>
         {% endif %}
       {% endwith %}
-
       {% if item_name and price %}
         <div class="result-box">
           <h3>{{ item_name }}</h3>
           <p>Price: ${{ price }}</p>
         </div>
       {% endif %}
-
       {% if processed_image_path %}
         <h2>Processed Image</h2>
         <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
@@ -304,49 +340,67 @@
     <p>&copy; 2025 Wentworth Institute of Technology. All Rights Reserved.</p>
   </footer>
 
-  <!-- Modal for the scanner -->
+  <!-- Modal for live scanning and capture -->
   <div id="scanner-modal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeScannerModal()">&times;</span>
-      <div id="scanner-container"></div>
+
+      <!-- Live scanning container with capture button overlay -->
+      <div id="scannerContainer">
+        <div id="scanner-container"></div>
+        <button class="capture-button" type="button" onclick="captureFrame()">Capture Image</button>
+      </div>
+
+      <!-- Captured image and cropping container -->
+      <div id="capturedContainer">
+        <h2>Crop Barcode</h2>
+        <img id="capturedImage" alt="Captured Barcode">
+        <div class="modal-buttons">
+          <!-- Button is disabled until image loads -->
+          <button id="crop-decode-button" type="button" onclick="cropAndDecode()" disabled>Crop &amp; Decode</button>
+          <button type="button" onclick="restartScanner()">Restart Live Scan</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- JavaScript for initializing QuaggaJS and modal functionality -->
+  <!-- JavaScript for live scanning, capturing, and cropping -->
   <script>
-    // Correction function for UPC-A codes:
-    // If a 13-digit code is returned starting with a "0", remove the first character.
-    function correctSKU(scanned) {
-      if (scanned.length === 13 && scanned.charAt(0) === '0') {
-        return scanned.slice(1);
-      }
-      return scanned;
-    }
+    let cropper;           // CropperJS instance
+    let liveStreamActive = false;
 
-    // Open the modal and start the scanner
+    // Open the modal and start live scanning
     function openScannerModal() {
       document.getElementById('scanner-modal').style.display = 'block';
-      startScanner();
+      document.getElementById('scannerContainer').style.display = 'block';
+      document.getElementById('capturedContainer').style.display = 'none';
+      startLiveScan();
     }
 
-    // Close the modal and stop the scanner
+    // Close the modal and stop everything
     function closeScannerModal() {
       Quagga.stop();
+      if (cropper) {
+        cropper.destroy();
+        cropper = null;
+      }
       document.getElementById('scanner-modal').style.display = 'none';
     }
 
-    function startScanner() {
+    // Start live scanning using QuaggaJS
+    function startLiveScan() {
+      liveStreamActive = true;
       Quagga.init({
         inputStream: {
           name: "Live",
           type: "LiveStream",
           target: document.querySelector('#scanner-container'),
           constraints: {
-            facingMode: "environment"
+            facingMode: "environment",
+            advanced: [{ focusMode: "continuous" }]
           }
         },
         decoder: {
-          // Enable readers: UPC-A (via upc_reader) plus others if needed.
           readers: [
             "code_128_reader",
             "ean_reader",
@@ -354,30 +408,135 @@
             "code_39_reader",
             "upc_reader"
           ]
-        }
+        },
+        locate: true
       }, function(err) {
         if (err) {
-          console.error("Error initializing scanner:", err);
+          console.error("Error initializing live scanner:", err);
           alert("Error initializing scanner: " + err);
           closeScannerModal();
           return;
         }
-        console.log("QuaggaJS initialized successfully");
+        console.log("Live scanner initialized successfully");
         Quagga.start();
       });
+    }
 
-      // When a barcode is detected, correct the SKU if necessary, then set the value.
-      Quagga.onDetected(function(result) {
-        var fullCode = result.codeResult.code;
-        console.log("Full Code:", fullCode);
-        var sku = fullCode.trim();
-        // If the returned code is 13 digits and starts with "0", correct it.
-        if (sku.length === 13 && sku.charAt(0) === '0') {
-          sku = correctSKU(sku);
+    // Capture a frame from the live video feed and switch to cropping mode
+    function captureFrame() {
+      Quagga.stop();
+      liveStreamActive = false;
+
+      let videoElement = document.querySelector('#scanner-container video');
+      if (!videoElement && Quagga.canvas && Quagga.canvas.dom && Quagga.canvas.dom.video) {
+        videoElement = Quagga.canvas.dom.video;
+      }
+      if (!videoElement) {
+        alert("No live video stream available.");
+        return;
+      }
+
+      // Create a canvas to capture the current frame
+      const canvas = document.createElement('canvas');
+      canvas.width = videoElement.videoWidth;
+      canvas.height = videoElement.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+      const dataURL = canvas.toDataURL("image/png");
+      console.log("Captured frame data URL:", dataURL);
+
+      // Hide the live scanning container, show the captured container
+      document.getElementById('scannerContainer').style.display = 'none';
+      document.getElementById('capturedContainer').style.display = 'block';
+
+      // Disable the Crop & Decode button until the image is fully loaded
+      const cropDecodeBtn = document.getElementById("crop-decode-button");
+      cropDecodeBtn.disabled = true;
+
+      // Set the captured image source
+      const capturedImage = document.getElementById('capturedImage');
+
+      // IMPORTANT: create the Cropper only after the image is loaded
+      capturedImage.onload = function() {
+        console.log("Image onload triggered. Initializing Cropper...");
+        if (cropper) {
+          cropper.destroy();
         }
-        console.log("Extracted SKU:", sku);
-        document.getElementById('barcode-id').value = sku;
-        closeScannerModal();
+        // Flexible Cropper
+        cropper = new Cropper(capturedImage, {
+          aspectRatio: NaN,
+          viewMode: 0,
+          movable: true,
+          zoomable: true,
+          scalable: true,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          dragMode: 'crop'
+        });
+        // Enable the Crop & Decode button now that Cropper is ready
+        cropDecodeBtn.disabled = false;
+        console.log("Cropper instance created:", cropper);
+      };
+
+      capturedImage.src = dataURL;
+      console.log("Captured frame assigned to #capturedImage");
+    }
+
+    // Restart live scanning if needed
+    function restartScanner() {
+      if (cropper) {
+        cropper.destroy();
+        cropper = null;
+      }
+      document.getElementById('capturedContainer').style.display = 'none';
+      document.getElementById('scannerContainer').style.display = 'block';
+      startLiveScan();
+    }
+
+    // Crop the image and decode the barcode from the cropped region using Quagga.decodeSingle
+    function cropAndDecode() {
+      if (!cropper) {
+        alert("No image available for cropping.");
+        return;
+      }
+      const croppedCanvas = cropper.getCroppedCanvas({
+        width: 1280,
+        height: 720
+      });
+      const croppedDataUrl = croppedCanvas.toDataURL("image/png");
+      console.log("Cropped Image Data URL:", croppedDataUrl);
+
+      Quagga.decodeSingle({
+        src: croppedDataUrl,
+        numOfWorkers: 0,
+        decoder: {
+          readers: [
+            "code_128_reader",
+            "ean_reader",
+            "ean_8_reader",
+            "code_39_reader",
+            "upc_reader"
+          ]
+        },
+        locate: true
+      }, function(result) {
+        let decodedResult = "";
+        if (result && result.codeResult) {
+          decodedResult = result.codeResult.code.trim();
+
+          // --- Remove only ONE leading zero if length=13 & starts with '0' ---
+          if (decodedResult.length === 13 && decodedResult.startsWith('0')) {
+            decodedResult = decodedResult.substring(1);
+          }
+          console.log("Decoded Barcode (leading zero fix):", decodedResult);
+
+        } else {
+          decodedResult = "Could not decode barcode. Please try again.";
+        }
+        // Update the main page input field
+        document.getElementById('barcode-id').value = decodedResult;
+        // Close the modal
+        document.getElementById('scanner-modal').style.display = 'none';
       });
     }
   </script>
