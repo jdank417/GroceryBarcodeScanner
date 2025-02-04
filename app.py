@@ -24,7 +24,7 @@ df["ItemNumber"] = (
 def lookup_item(barcode_data):
     """
     Look up item name and price in the Excel dataframe based on the SKU.
-    Returns (item_name, item_price) or (None, None) if not found.
+    Returns (item_name, item_price) or (None, None) if not found!
     """
     barcode_data = str(barcode_data).strip()
     print(f"Looking up barcode: '{barcode_data}'")  # Debug print
