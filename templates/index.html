@@ -352,13 +352,12 @@
   <script>
     // Display a pop-up message on page load
     window.onload = function() {
-    // Check if the popup has already been shown during this session.
-    if (!sessionStorage.getItem("popupShown")) {
-      alert("Note: The camera function is in beta testing.");
-      sessionStorage.setItem("popupShown", "true");
-    }
-};
-
+      // Check if the popup has already been shown during this session.
+      if (!sessionStorage.getItem("popupShown")) {
+        alert("Note: The camera function is in beta testing.");
+        sessionStorage.setItem("popupShown", "true");
+      }
+    };
 
     // Correction function for UPC-A codes:
     // If a 13-digit code is returned starting with a "0", remove the first character.
@@ -392,7 +391,6 @@
           }
         },
         decoder: {
-          // Enable readers: UPC-A (via upc_reader) plus others if needed.
           readers: [
             "code_128_reader",
             "ean_reader",
@@ -411,7 +409,6 @@
         console.log("QuaggaJS initialized successfully");
         Quagga.start();
       });
-      // Removed auto-detection so that capture only occurs when the button is pressed.
     }
 
     // Function to capture the current frame from the video stream and decode the barcode.
@@ -430,6 +427,9 @@
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       var dataURL = canvas.toDataURL('image/png');
       console.log("Captured image dataURL:", dataURL);
+
+      // Stop the live scanner before attempting to decode the captured image.
+      Quagga.stop();
 
       // Use Quagga.decodeSingle to try decoding the barcode from the captured image.
       Quagga.decodeSingle({
@@ -455,6 +455,8 @@
           closeScannerModal();
         } else {
           alert("No barcode detected in the captured image. Please try again.");
+          // Restart the scanner so that the user can try capturing again.
+          startScanner();
         }
       });
     }
