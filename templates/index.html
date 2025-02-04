@@ -230,7 +230,7 @@
     /* Scanner container inside modal */
     #scanner-container {
       width: 100%;
-      height: 400px;
+      height: 60vh; /* Using viewport height for better mobile optimization */
       background-color: #000;
       overflow: hidden;
       position: relative;
@@ -259,6 +259,12 @@
     }
     #scanner-modal button:hover {
       background-color: #e6c200;
+    }
+    /* Media query for smaller screens */
+    @media (max-width: 600px) {
+      #scanner-container {
+        height: 70vh; /* Increase height on smaller screens */
+      }
     }
   </style>
 </head>
@@ -344,6 +350,16 @@
 
   <!-- JavaScript for initializing QuaggaJS, modal functionality, and capture logic -->
   <script>
+    // Display a pop-up message on page load
+    window.onload = function() {
+    // Check if the popup has already been shown during this session.
+    if (!sessionStorage.getItem("popupShown")) {
+      alert("Note: The camera function is in beta testing.");
+      sessionStorage.setItem("popupShown", "true");
+    }
+};
+
+
     // Correction function for UPC-A codes:
     // If a 13-digit code is returned starting with a "0", remove the first character.
     function correctSKU(scanned) {
