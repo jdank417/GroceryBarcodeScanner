@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from functools import lru_cache
 
+
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
@@ -39,6 +40,8 @@ def lookup_item(barcode_data):
         return None, None
 
 
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -56,3 +59,4 @@ def index():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)
+
