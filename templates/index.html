@@ -193,79 +193,6 @@
     .contact-section ul li a:hover {
       text-decoration: underline;
     }
-    /* Modal overlay for the scanner */
-    .modal {
-      display: none; /* Hidden by default */
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.7); /* Semi-transparent background */
-    }
-    .modal-content {
-      background-color: #fefefe;
-      margin: 5% auto;
-      padding: 20px;
-      border-radius: 10px;
-      width: 80%;
-      max-width: 600px;
-      position: relative;
-      text-align: center;
-    }
-    .close {
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      font-size: 28px;
-      font-weight: bold;
-      color: #aaa;
-      cursor: pointer;
-    }
-    .close:hover {
-      color: #000;
-    }
-    /* Scanner container inside modal */
-    #scanner-container {
-      width: 100%;
-      height: 60vh; /* Using viewport height for better mobile optimization */
-      background-color: #000;
-      overflow: hidden;
-      position: relative;
-    }
-    /* Constrain the live video to the container */
-    #scanner-container video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-    /* Optional: Style for the capture button inside modal */
-    #scanner-modal button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #FFD700;
-      color: #333;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      z-index: 10;
-      position: relative;
-    }
-    #scanner-modal button:hover {
-      background-color: #e6c200;
-    }
-    /* Media query for smaller screens */
-    @media (max-width: 600px) {
-      #scanner-container {
-        height: 70vh; /* Increase height on smaller screens */
-      }
-    }
   </style>
 </head>
 <body>
@@ -294,9 +221,11 @@
         <label for="barcode-id">Enter Barcode ID:</label>
         <input type="text" name="barcode_id" id="barcode-id" placeholder="Enter Barcode ID" maxlength="20" required>
         <button type="submit">Submit</button>
-        <!-- Button to open scanner modal -->
-        <button type="button" onclick="openScannerModal()">Scan Barcode</button>
+        <!-- Button to trigger native camera capture -->
+        <button type="button" onclick="openNativeCamera()">Scan Barcode</button>
       </form>
+      <!-- Hidden file input for native camera capture -->
+      <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
     </section>
 
     <section class="results-section">
@@ -338,103 +267,40 @@
     <p>&copy; 2025 Wentworth Institute of Technology. All Rights Reserved.</p>
   </footer>
 
-  <!-- Modal for the scanner -->
-  <div id="scanner-modal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeScannerModal()">&times;</span>
-      <div id="scanner-container"></div>
-      <!-- Capture button added below the scanner view -->
-      <button type="button" onclick="captureImage()">Capture</button>
-    </div>
-  </div>
-
-  <!-- JavaScript for initializing QuaggaJS, modal functionality, and capture logic -->
+  <!-- JavaScript to handle native camera capture and barcode decoding -->
   <script>
     // Display a pop-up message on page load
     window.onload = function() {
-      // Check if the popup has already been shown during this session.
       if (!sessionStorage.getItem("popupShown")) {
         alert("Note: The camera function is in beta testing.");
         sessionStorage.setItem("popupShown", "true");
       }
     };
 
-    // Correction function for UPC-A codes:
-    // If a 13-digit code is returned starting with a "0", remove the first character.
-    function correctSKU(scanned) {
-      if (scanned.length === 13 && scanned.charAt(0) === '0') {
-        return scanned.slice(1);
+    // Open the native camera/file picker
+    function openNativeCamera() {
+      document.getElementById("native-camera-input").click();
+    }
+
+    // Listen for changes on the hidden file input (i.e. when a picture is taken)
+    document.getElementById("native-camera-input").addEventListener("change", function(e) {
+      if (e.target.files && e.target.files[0]) {
+        var file = e.target.files[0];
+        var reader = new FileReader();
+        reader.onload = function(evt) {
+          var dataURL = evt.target.result;
+          // Pass the captured image to Quagga for decoding
+          decodeBarcode(dataURL);
+        };
+        reader.readAsDataURL(file);
       }
-      return scanned;
-    }
+    });
 
-    // Open the modal and start the scanner
-    function openScannerModal() {
-      document.getElementById('scanner-modal').style.display = 'block';
-      startScanner();
-    }
-
-    // Close the modal and stop the scanner
-    function closeScannerModal() {
-      Quagga.stop();
-      document.getElementById('scanner-modal').style.display = 'none';
-    }
-
-    function startScanner() {
-      Quagga.init({
-        inputStream: {
-          name: "Live",
-          type: "LiveStream",
-          target: document.querySelector('#scanner-container'),
-          constraints: {
-            facingMode: "environment"
-          }
-        },
-        decoder: {
-          readers: [
-            "code_128_reader",
-            "ean_reader",
-            "ean_8_reader",
-            "code_39_reader",
-            "upc_reader"
-          ]
-        }
-      }, function(err) {
-        if (err) {
-          console.error("Error initializing scanner:", err);
-          alert("Error initializing scanner: " + err);
-          closeScannerModal();
-          return;
-        }
-        console.log("QuaggaJS initialized successfully");
-        Quagga.start();
-      });
-    }
-
-    // Function to capture the current frame from the video stream and decode the barcode.
-    function captureImage() {
-      // Find the video element within the scanner container.
-      var video = document.querySelector('#scanner-container video');
-      if (!video) {
-        alert("Video stream not found. Please try again.");
-        return;
-      }
-      // Create a canvas to capture the current video frame.
-      var canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      var ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      var dataURL = canvas.toDataURL('image/png');
-      console.log("Captured image dataURL:", dataURL);
-
-      // Stop the live scanner before attempting to decode the captured image.
-      Quagga.stop();
-
-      // Use Quagga.decodeSingle to try decoding the barcode from the captured image.
+    // Function to decode the barcode from the captured image data URL
+    function decodeBarcode(dataURL) {
       Quagga.decodeSingle({
         src: dataURL,
-        numOfWorkers: 0,  // Needs to be 0 when used within decodeSingle
+        numOfWorkers: 0,  // Must be 0 when using decodeSingle
         decoder: {
           readers: [
             "code_128_reader",
@@ -447,16 +313,13 @@
       }, function(result) {
         if (result && result.codeResult) {
           var code = result.codeResult.code;
-          console.log("Captured barcode:", code);
+          // Correction: remove leading zero for 13-digit codes if necessary
           if (code.length === 13 && code.charAt(0) === '0') {
-            code = correctSKU(code);
+            code = code.slice(1);
           }
           document.getElementById('barcode-id').value = code;
-          closeScannerModal();
         } else {
-          alert("No barcode detected in the captured image. Please try again.");
-          // Restart the scanner so that the user can try capturing again.
-          startScanner();
+          alert("No barcode detected in the image. Please try again.");
         }
       });
     }
