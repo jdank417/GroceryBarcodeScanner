@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Login</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Custom CSS -->
+  <style>
+    :root {
+      --bg-color: #f8f9fa;
+      --text-color: #343a40;
+      --card-bg: #fff;
+      --card-border: #dee2e6;
+    }
+    [data-theme="dark"] {
+      --bg-color: #343a40;
+      --text-color: #f8f9fa;
+      --card-bg: #495057;
+      --card-border: #6c757d;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 40px;
+    }
+    .container {
+      max-width: 400px;
+      margin: auto;
+    }
+    .toggle-theme {
+      cursor: pointer;
+      font-size: 0.9rem;
+      border: none;
+      background: none;
+      color: var(--text-color);
+    }
+  </style>
+</head>
+<body>
+  <!-- Dark Mode Toggle -->
+  <div class="d-flex justify-content-end mb-3">
+    <button class="toggle-theme" id="themeToggle">Switch to Dark Mode</button>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="card-title text-center mb-4">Admin Login</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="alert alert-danger" role="alert">
+              {% for category, message in messages %}
+                <p class="mb-0">{{ message }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        <form method="post">
+          <div class="form-group">
+            <input type="password" class="form-control" name="password" placeholder="Password" required>
+          </div>
+          <div class="form-group">
+            <input type="submit" class="btn btn-primary btn-block" value="Login">
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS, Popper.js, and jQuery -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script>
+    // Dark mode toggle functionality
+    document.getElementById('themeToggle').addEventListener('click', function() {
+      const htmlEl = document.documentElement;
+      if (htmlEl.getAttribute('data-theme') === 'light') {
+        htmlEl.setAttribute('data-theme', 'dark');
+        this.textContent = "Switch to Light Mode";
+      } else {
+        htmlEl.setAttribute('data-theme', 'light');
+        this.textContent = "Switch to Dark Mode";
+      }
+    });
+  </script>
+</body>
+</html>
