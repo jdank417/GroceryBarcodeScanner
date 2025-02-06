@@ -5,9 +5,9 @@
   <title>Monitoring Dashboard</title>
   <!-- Include Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Include Moment.js (required by the adapter) -->
+  <!-- Include Moment.js (if needed for date formatting) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-  <!-- Include the Moment adapter for Chart.js -->
+  <!-- Include the Moment adapter for Chart.js (optional if using time scale) -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 40px; }
@@ -45,78 +45,109 @@
       </tr>
   </table>
 
-  <!-- Chart Section for Successful Lookups -->
+  <!-- Combined Bar Chart Section -->
   <div class="chart-container">
-      <canvas id="lookupSuccessChart"></canvas>
-  </div>
-
-  <!-- Chart Section for Lookup Failures -->
-  <div class="chart-container">
-      <canvas id="lookupFailureChart"></canvas>
-  </div>
-
-  <!-- Chart Section for Barcode Decode Failures -->
-  <div class="chart-container">
-      <canvas id="barcodeFailureChart"></canvas>
+      <canvas id="combinedBarChart"></canvas>
   </div>
 
   <script>
-    // Helper function to create a chart for a given event type.
-    // Optionally, you can pass a group_by parameter (e.g., "minute" or "hour").
-    function createChart(canvasId, eventType, labelText, groupBy="hour") {
-      fetch("{{ url_for('historical_data') }}?event_type=" + eventType + "&group_by=" + groupBy)
-        .then(response => response.json())
-        .then(data => {
-          console.log("Historical data for " + eventType + ":", data);
-          const labels = data.map(item => item.hour);
-          const counts = data.map(item => item.count);
+    // Helper function to merge three datasets by their time labels.
+    // It creates a unified sorted list of unique times and, for each dataset,
+    // fills missing values with 0.
+    function mergeDatasets(successData, lookupFailData, barcodeFailData) {
+      const timeSet = new Set();
+      // Collect all unique time labels from each dataset.
+      successData.forEach(item => timeSet.add(item.hour));
+      lookupFailData.forEach(item => timeSet.add(item.hour));
+      barcodeFailData.forEach(item => timeSet.add(item.hour));
 
-          const ctx = document.getElementById(canvasId).getContext('2d');
-          new Chart(ctx, {
-            type: 'line',
-            data: {
-              labels: labels,
-              datasets: [{
-                label: labelText,
-                data: counts,
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1,
-                fill: true
-              }]
-            },
-            options: {
-              scales: {
-                x: {
-                  type: 'time',
-                  time: {
-                    unit: groupBy === "minute" ? 'minute' : 'hour'
-                  },
-                  title: {
-                    display: true,
-                    text: 'Date & Time'
-                  }
-                },
-                y: {
-                  beginAtZero: true,
-                  title: {
-                    display: true,
-                    text: 'Count'
-                  }
-                }
-              }
-            }
-          });
-        })
-        .catch(error => {
-          console.error("Error fetching historical data for " + eventType + ":", error);
-        });
+      // Convert to array and sort the times.
+      const times = Array.from(timeSet).sort();
+
+      // Helper to build an array of counts for a given dataset, aligned to the common time array.
+      function buildCounts(data) {
+        const map = {};
+        data.forEach(item => { map[item.hour] = item.count; });
+        return times.map(time => map[time] || 0);
+      }
+
+      return {
+        times: times,
+        successCounts: buildCounts(successData),
+        lookupFailCounts: buildCounts(lookupFailData),
+        barcodeFailCounts: buildCounts(barcodeFailData)
+      };
     }
 
-    // Create charts for each event type.
-    createChart('lookupSuccessChart', 'lookup_success', 'Successful Lookups (Past 30 Days)', "hour");
-    createChart('lookupFailureChart', 'lookup_failure', 'Lookup Failures (Past 30 Days)', "hour");
-    createChart('barcodeFailureChart', 'barcode_scan_failure', 'Barcode Decode Failures (Past 30 Days)', "hour");
+    // Fetch historical data for all three event types in parallel.
+    Promise.all([
+      fetch("{{ url_for('historical_data') }}?event_type=lookup_success&group_by=hour").then(r => r.json()),
+      fetch("{{ url_for('historical_data') }}?event_type=lookup_failure&group_by=hour").then(r => r.json()),
+      fetch("{{ url_for('historical_data') }}?event_type=barcode_scan_failure&group_by=hour").then(r => r.json())
+    ]).then(([successData, lookupFailData, barcodeFailData]) => {
+      console.log("Success data:", successData);
+      console.log("Lookup failure data:", lookupFailData);
+      console.log("Barcode failure data:", barcodeFailData);
+
+      const merged = mergeDatasets(successData, lookupFailData, barcodeFailData);
+      const ctx = document.getElementById('combinedBarChart').getContext('2d');
+
+      // Create a grouped bar chart using category x-axis (each label is a time string)
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: merged.times,
+          datasets: [
+            {
+              label: 'Successful Lookups',
+              data: merged.successCounts,
+              backgroundColor: 'rgba(0, 128, 0, 0.7)',  // Green
+              borderColor: 'rgba(0, 128, 0, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Lookup Failures',
+              data: merged.lookupFailCounts,
+              backgroundColor: 'rgba(255, 0, 0, 0.7)',  // Red
+              borderColor: 'rgba(255, 0, 0, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Barcode Decode Failures',
+              data: merged.barcodeFailCounts,
+              backgroundColor: 'rgba(255, 255, 0, 0.7)',  // Yellow
+              borderColor: 'rgba(255, 255, 0, 1)',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              type: 'category',
+              title: {
+                display: true,
+                text: 'Date & Time'
+              },
+              stacked: false,  // Group bars side by side.
+              grid: {
+                display: false
+              }
+            },
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Count'
+              }
+            }
+          }
+        }
+      });
+    }).catch(error => {
+      console.error("Error fetching combined historical data:", error);
+    });
   </script>
 </body>
 </html>

@@ -9,10 +9,10 @@ from collections import defaultdict
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'  # Replace with a secure value in production
+app.secret_key = 'supersecretkey'  # In production, use environment variables for this value.
 
 # Set your admin password for dashboard access
-ADMIN_PASSWORD = "admin"
+ADMIN_PASSWORD = "admin"  # In production, use an environment variable.
 
 # Configure logging
 logging.basicConfig(
@@ -72,6 +72,18 @@ def log_event_sql(event_type):
               (event_type, int(time.time())))
     conn.commit()
     conn.close()
+
+
+def get_aggregated_counts():
+    """Return total counts for each event type from the SQLite database."""
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    counts = {}
+    for event in ["lookup_success", "lookup_failure", "barcode_scan_failure"]:
+        c.execute("SELECT COUNT(*) FROM events WHERE event_type = ?", (event,))
+        counts[event] = c.fetchone()[0]
+    conn.close()
+    return counts
 
 
 # Initialize the database when the app starts
@@ -149,9 +161,15 @@ def metrics():
 
 @app.route("/api/historical")
 def historical_data():
+    """
+    Query the SQLite database to return aggregated counts for a given event type
+    over the past 30 days. Use a query parameter 'group_by' to specify the granularity:
+    'minute' (format: YYYY-MM-DD HH:MM:00) or default 'hour' (format: YYYY-MM-DD HH:00:00).
+    Timestamps are converted to local time.
+    """
     event_type = request.args.get("event_type")
     if not event_type:
-         return jsonify({"error": "event_type parameter required"}), 400
+        return jsonify({"error": "event_type parameter required"}), 400
 
     group_by = request.args.get("group_by", "hour")
     if group_by == "minute":
@@ -164,7 +182,7 @@ def historical_data():
 
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    # Convert to local time using the 'localtime' modifier
+    # Convert the UNIX timestamp to local time using the 'localtime' modifier.
     query = f"""
         SELECT strftime('{time_format}', datetime(timestamp, 'unixepoch', 'localtime')) as time_group, COUNT(*) as count
         FROM events
@@ -178,7 +196,6 @@ def historical_data():
 
     result = [{"hour": row[0], "count": row[1]} for row in rows]
     return jsonify(result)
-
 
 
 #########################################
@@ -198,11 +215,12 @@ def dashboard():
                 flash("Incorrect password. Please try again.", "error")
         return render_template("admin_login.html")
 
-    # Admin is authenticated; display immediate counters and embed charts.
+    # Admin is authenticated; get aggregated counts from the SQLite database.
+    counts = get_aggregated_counts()
     metrics_data = {
-        "lookup_success_total": lookup_success_counter._value.get(),
-        "lookup_failure_total": lookup_failure_counter._value.get(),
-        "barcode_scan_failure_total": barcode_scan_failure_counter._value.get()
+        "lookup_success_total": counts.get("lookup_success", 0),
+        "lookup_failure_total": counts.get("lookup_failure", 0),
+        "barcode_scan_failure_total": counts.get("barcode_scan_failure", 0)
     }
     return render_template("dashboard.html", metrics=metrics_data)
 
