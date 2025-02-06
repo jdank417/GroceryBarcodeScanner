@@ -1,404 +1,426 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <title>Barcode Scanner</title>
-    <!-- Include QuaggaJS from CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-    <style>
-        /* Global Styles */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            color: #333;
-            background-image: url('../static/uploads/168227_hero.jpg');
-            background-size: cover;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            background-color: rgba(0, 0, 0, 0.5);
-            background-blend-mode: darken;
-        }
-        header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #000;
-    color: #FFD700;
-    padding: 20px;
-    border-bottom: 3px solid #FFD700;
-}
-
-/* Remove fixed width and use flex properties */
-header .logo {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-header nav {
-    /* This makes the nav expand to the available space and align items to the right */
-    flex: 1;
-    display: flex;
-    justify-content: flex-end;
-}
-
-header nav ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    gap: 20px;  /* Adjust this gap as needed */
-    /* Remove any fixed width such as width: 250px; */
-}
-
-header nav ul li a {
-    color: #FFD700;
-    text-decoration: none;
-    font-weight: bold;
-    transition: color 0.6s ease, background-color 0.6s ease;
-}
-
-header nav ul li a:hover {
-    color: #000;
-    background-color: #FFD700;
-    padding: 5px 10px;
-    border-radius: 5px;
-}
-
-        header nav ul li a:hover {
-            color: #000;
-            background-color: #FFD700;
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-        main {
-            padding: 20px;
-            flex: 1;
-        }
-        .logo-img {
-            display: block;
-            margin: 20px auto;
-            width: 150px;
-            height: auto;
-        }
-        h1 {
-            text-align: center;
-            color: #FFD700;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 36px;
-            font-weight: bold;
-            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
-        }
-        .upload-section, .results-section, .contact-section, .about-section {
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            margin: 0 auto 30px auto;
-            border-top: 5px solid #FFD700;
-        }
-        .upload-section label {
-            display: block;
-            margin: 10px 0 5px;
-            font-weight: bold;
-        }
-        .upload-section input[type="text"] {
-            display: block;
-            width: 100%;
-            max-width: 400px;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .upload-section button, .results-section button {
-            background-color: #FFD700;
-            color: #333;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 16px;
-            margin-right: 10px;
-            font-family: "Times New Roman";
-        }
-        .upload-section button:hover, .results-section button:hover {
-            background-color: #e6c200;
-        }
-        .result-box {
-            background-color: #fff;
-            border: 2px solid #FFD700;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-            max-width: 500px;
-            margin: 20px auto;
-            text-align: center;
-            animation: popIn 0.6s ease-out;
-        }
-        .result-box h3 {
-            margin-bottom: 10px;
-            font-size: 24px;
-            color: #800000;
-        }
-        .result-box p, .about-section p {
-            font-size: 17px;
-            color: #333;
-            font-family: "Times New Roman";
-        }
-        @keyframes popIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        .results-section h2 {
-            margin-bottom: 15px;
-            color: #800000;
-            text-align: center;
-        }
-        .results-section img {
-            width: 200px;
-            height: auto;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-top: 10px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        footer {
-            background-color: #000;
-            color: white;
-            text-align: center;
-            padding: 10px 0;
-            border-top: 3px solid #FFD700;
-        }
-        footer a {
-            color: #ff4500;
-            text-decoration: none;
-        }
-        footer a:hover {
-            text-decoration: underline;
-        }
-        .contact-section h2, .about-section h2 {
-            color: #800000;
-            margin-bottom: 20px;
-        }
-        .contact-section ul {
-            list-style: none;
-            padding: 0;
-            font-size: 20px;
-            font-family: "Times New Roman";
-        }
-        .contact-section ul li {
-            margin-bottom: 10px;
-            font-size: 20px;
-            font-family: "Times New Roman";
-        }
-        .contact-section ul li a {
-            color: #333;
-            font-size: 20px;
-            text-decoration: none;
-            font-family: "Times New Roman";
-        }
-        .contact-section ul li a:hover {
-            text-decoration: underline;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Barcode Scanner</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <!-- QuaggaJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+  <!-- Custom CSS -->
+  <style>
+    :root {
+      --bg-color: #f8f9fa;
+      --text-color: #343a40;
+      --accent-color: #FFD700;
+      --header-bg: #000;
+      --header-text: #FFD700;
+      --card-bg: rgba(255, 255, 255, 0.9);
+    }
+    [data-theme="dark"] {
+      --bg-color: #343a40;
+      --text-color: #f8f9fa;
+      --accent-color: #FFD700;
+      --header-bg: #222;
+      --header-text: #FFD700;
+      --card-bg: rgba(0, 0, 0, 0.8);
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      background-image: url('../static/uploads/168227_hero.jpg');
+      background-size: cover;
+      background-position: center;
+      /* Using blend mode to darken slightly by default */
+      background-blend-mode: darken;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    /* Dark mode overlay */
+    [data-theme="dark"] body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 0;
+      pointer-events: none;
+    }
+    header {
+      background-color: var(--header-bg);
+      color: var(--header-text);
+      border-bottom: 3px solid var(--accent-color);
+      position: relative;
+      z-index: 1;
+    }
+    header .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    header nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      gap: 20px;
+    }
+    header nav ul li a {
+      color: var(--header-text);
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.6s ease, background-color 0.6s ease;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    header nav ul li a:hover {
+      color: var(--header-bg);
+      background-color: var(--accent-color);
+    }
+    .theme-toggle button {
+      background: none;
+      border: none;
+      color: var(--header-text);
+      font-weight: bold;
+      cursor: pointer;
+      outline: none;
+    }
+    main {
+      flex: 1;
+      padding: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    /* Logo Container */
+    .logo-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 0;
+    }
+    .logo-img {
+      width: 250px;
+      height: auto;
+    }
+    @media (min-width: 768px) {
+      .logo-img {
+        width: 375px;
+      }
+    }
+    @media (min-width: 1024px) {
+      .logo-img {
+        width: 500px;
+      }
+    }
+    /* Section Cards */
+    .section-card {
+      background-color: var(--card-bg);
+      border-top: 5px solid var(--accent-color);
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+      position: relative;
+      z-index: 1;
+    }
+    .section-card h2 {
+      color: #800000;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .section-card p {
+      font-size: 18px;
+      line-height: 1.6;
+    }
+    /* Upload & Results Buttons */
+    .btn-custom {
+      background-color: var(--accent-color);
+      color: var(--text-color);
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 16px;
+      font-family: "Times New Roman", serif;
+      transition: background-color 0.3s ease;
+    }
+    .btn-custom:hover {
+      background-color: #e6c200;
+    }
+    /* GitHub Button styled like code */
+    .btn-code {
+      background-color: #2d2d2d;
+      color: #f8f8f2;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 14px;
+      padding: 10px 20px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      text-decoration: none;
+      display: inline-block;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .btn-code:hover {
+      background-color: #3a3a3a;
+      transform: translateY(-2px);
+    }
+    /* Result Box */
+    .result-box {
+      background-color: #fff;
+      border: 2px solid var(--accent-color);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+      max-width: 500px;
+      margin: 20px auto;
+      text-align: center;
+      animation: popIn 0.6s ease-out;
+    }
+    .result-box h3 {
+      margin-bottom: 10px;
+      font-size: 24px;
+      color: #800000;
+    }
+    .result-box p {
+      font-size: 17px;
+      color: #333;
+      font-family: "Times New Roman", serif;
+    }
+    @keyframes popIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    footer {
+      background-color: var(--header-bg);
+      color: var(--text-color);
+      text-align: center;
+      padding: 10px 0;
+      border-top: 3px solid var(--accent-color);
+      position: relative;
+      z-index: 1;
+    }
+    footer a {
+      color: #ff4500;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+  <!-- Optional: Include a code font -->
+  <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <div class="logo">
-            <div class="logo-text">Wentworth</div>
-            <div class="subtitle">Institute of Technology</div>
-        </div>
-        <nav>
-            <ul>
-                <li><a href="#">Home</a></li>
-                <li><a href="#">About</a></li>
-                <li><a href="#contact">Contact</a></li>
-                <!-- New Dashboard link -->
-                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-            </ul>
-        </nav>
-    </header>
+  <!-- Header -->
+  <header class="py-3">
+    <div class="container d-flex justify-content-between align-items-center">
+      <div class="logo">
+        <div>Wentworth</div>
+        <small>Institute of Technology</small>
+      </div>
+      <nav>
+        <ul class="d-flex">
+          <li><a href="#home" class="mr-3">Home</a></li>
+          <li><a href="#about" class="mr-3">About</a></li>
+          <li><a href="#contact" class="mr-3">Contact</a></li>
+          <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        </ul>
+      </nav>
+      <div class="theme-toggle">
+        <button id="themeToggle">Switch to Dark Mode</button>
+      </div>
+    </div>
+  </header>
 
-    <main>
-        <div class="logo-container">
-            <img src="../static/uploads/BAC_Logo_tr.png" alt="Logo" class="logo-img">
-        </div>
+  <!-- Main Content -->
+  <main id="home">
+    <div class="container">
+      <!-- Logo Image -->
+      <div class="logo-container">
+        <img src="../static/uploads/BAC_Logo_tr.png" alt="Logo" class="logo-img">
+      </div>
 
-        <style>
-            .logo-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                width: 100%;
-                padding: 10px;
-            }
-            .logo-img {
-                max-width: 100%;
-                height: auto;
-                width: 250px;
-            }
-            @media (min-width: 768px) {
-                .logo-img {
-                    width: 375px;
-                }
-            }
-            @media (min-width: 1024px) {
-                .logo-img {
-                    width: 500px;
-                }
-            }
-        </style>
+      <!-- Upload Section -->
+      <section class="section-card">
+        <form method="post" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="barcode-id" class="font-weight-bold">Enter Barcode ID:</label>
+            <input type="text" name="barcode_id" id="barcode-id" class="form-control" placeholder="Enter Barcode ID" maxlength="20" required>
+          </div>
+          <div class="form-group d-flex justify-content-between">
+            <button type="submit" class="btn btn-custom">Submit</button>
+            <!-- Button to trigger native camera capture -->
+            <button type="button" class="btn btn-custom" onclick="openNativeCamera()">Scan Barcode</button>
+          </div>
+        </form>
+        <!-- Hidden file input for native camera capture -->
+        <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
+      </section>
 
-        <section class="upload-section">
-            <form method="post" enctype="multipart/form-data">
-                <label for="barcode-id">Enter Barcode ID:</label>
-                <input type="text" name="barcode_id" id="barcode-id" placeholder="Enter Barcode ID" maxlength="20" required>
-                <button type="submit">Submit</button>
-                <!-- Button to trigger native camera capture -->
-                <button type="button" onclick="openNativeCamera()">Scan Barcode</button>
-            </form>
-            <!-- Hidden file input for native camera capture -->
-            <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
-        </section>
-
-        <section class="results-section">
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <ul>
-                        {% for message in messages %}
-                            <li>{{ message }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            {% endwith %}
-
-            {% if item_name and price %}
-                <div class="result-box">
-                    <h3>{{ item_name }}</h3>
-                    <p>Price: ${{ price }}</p>
-                </div>
-            {% endif %}
-
-            {% if processed_image_path %}
-                <h2>Processed Image</h2>
-                <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
-                     alt="Processed Barcode Image">
-            {% endif %}
-        </section>
-
-        <!-- About Section -->
-        <section id="about" class="about-section" style="background-color: rgba(255, 255, 255, 0.9); padding: 40px; border-radius: 8px; margin: 20px auto; max-width: 800px;">
-            <h2 style="text-align: center; color: #800000;">About Our App</h2>
-            <p style="font-size: 18px; line-height: 1.6;">
-                Our barcode scanner app is an innovative solution developed by the Business Affairs Committee of the Wentworth Student Government. Designed specifically for college students, it offers a quick and reliable way to navigate Tessie’s market—empowering you to check product prices at a glance.
-            </p>
-            <p style="font-size: 18px; line-height: 1.6;">
-                Built with Python, JavaScript and HTML, the app combines state-of-the-art scanning technology with a user-friendly interface to ensure smooth and accurate performance. Our passionate team created this tool to meet the everyday needs of students, making your shopping experience more convenient.
-            </p>
-            <p style="font-size: 18px; line-height: 1.6;">
-                Interested in how we built it, or want to collaborate on the project? Check out our GitHub!
-            </p>
-            <div style="text-align: center; margin-top: 20px;">
-                <a href="https://github.com/jdank417/GroceryBarcodeScanner" target="_blank" style="font-size: 18px; color: #000000; text-decoration: none; border: 2px solid #FFD700; padding: 10px 20px; border-radius: 5px;">Visit our GitHub Repository</a>
+      <!-- Results Section -->
+      <section class="section-card">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="alert alert-info" role="alert">
+              {% for message in messages %}
+                <p class="mb-0">{{ message }}</p>
+              {% endfor %}
             </div>
-        </section>
+          {% endif %}
+        {% endwith %}
+        {% if item_name and price %}
+          <div class="result-box">
+            <h3>{{ item_name }}</h3>
+            <p>Price: ${{ price }}</p>
+          </div>
+        {% endif %}
+        {% if processed_image_path %}
+          <h2 class="text-center text-danger">Processed Image</h2>
+          <div class="text-center">
+            <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
+                 alt="Processed Barcode Image" class="img-fluid rounded" style="max-width: 200px;">
+          </div>
+        {% endif %}
+      </section>
 
-        <!-- Contact Section -->
-        <section id="contact" class="contact-section">
-            <h2>Contact Us</h2>
-            <ul>
-                <li>Jason Dank (PM/Fullstack): <a href="mailto:dankj@wit.edu">dankj@wit.edu</a></li>
-                <li>Aliya Vagapova (UI/UX): <a href="mailto:vagapovaa@wit.edu">vagapovaa@wit.edu</a></li>
-                <li>WSG: <a href="mailto:wsg@wit.edu">wsg@wit.edu</a></li>
-            </ul>
-        </section>
-    </main>
+      <!-- About Section -->
+      <section id="about" class="section-card">
+        <h2>About Our App</h2>
+        <p>
+          Our barcode scanner app is an innovative solution developed by the Business Affairs Committee of the Wentworth Student Government. Designed specifically for college students, it offers a quick and reliable way to navigate Tessie’s market—empowering you to check product prices at a glance.
+        </p>
+        <p>
+          Built with Python, JavaScript, and HTML, the app combines state-of-the-art scanning technology with a user-friendly interface to ensure smooth and accurate performance. Our passionate team created this tool to meet the everyday needs of students, making your shopping experience more convenient.
+        </p>
+        <p>
+          Interested in how we built it, or want to collaborate on the project? Check out our GitHub!
+        </p>
+        <div class="text-center mt-3">
+          <!-- GitHub Button styled as code -->
+          <a href="https://github.com/jdank417/GroceryBarcodeScanner" target="_blank" class="btn-code">git clone https://github.com/jdank417/GroceryBarcodeScanner.git</a>
+        </div>
+      </section>
 
-    <footer>
-        <p>&copy; 2025 Wentworth Institute of Technology. All Rights Reserved.</p>
-    </footer>
+      <!-- Contact Section -->
+      <section id="contact" class="section-card">
+        <h2>Contact Us</h2>
+        <ul class="list-unstyled" style="font-size: 20px; font-family: 'Times New Roman', serif;">
+          <li>Jason Dank (PM/Fullstack): <a href="mailto:dankj@wit.edu">dankj@wit.edu</a></li>
+          <li>Aliya Vagapova (UI/UX): <a href="mailto:vagapovaa@wit.edu">vagapovaa@wit.edu</a></li>
+          <li>WSG: <a href="mailto:wsg@wit.edu">wsg@wit.edu</a></li>
+        </ul>
+      </section>
+    </div>
+  </main>
 
-    <!-- JavaScript to handle native camera capture and barcode decoding -->
-    <script>
-        console.log("Barcode scanner script loaded.");
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p class="mb-0">&copy; 2025 Wentworth Institute of Technology. All Rights Reserved.</p>
+    </div>
+  </footer>
 
-        // Open the native camera/file picker
-        function openNativeCamera() {
-            document.getElementById("native-camera-input").click();
-        }
+  <!-- JavaScript (jQuery, Popper, Bootstrap) -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <!-- Custom JavaScript -->
+  <script>
+    // Dark mode toggle functionality
+    document.getElementById('themeToggle').addEventListener('click', function() {
+      const htmlEl = document.documentElement;
+      if (htmlEl.getAttribute('data-theme') === 'light') {
+        htmlEl.setAttribute('data-theme', 'dark');
+        this.textContent = "Switch to Light Mode";
+      } else {
+        htmlEl.setAttribute('data-theme', 'light');
+        this.textContent = "Switch to Dark Mode";
+      }
+    });
 
-        // Listen for changes on the hidden file input (i.e., when a picture is taken)
-        document.getElementById("native-camera-input").addEventListener("change", function (e) {
-            if (e.target.files && e.target.files[0]) {
-                var file = e.target.files[0];
-                var reader = new FileReader();
-                reader.onload = function (evt) {
-                    var dataURL = evt.target.result;
-                    console.log("Image captured, attempting to decode barcode.");
-                    // Pass the captured image to Quagga for decoding
-                    decodeBarcode(dataURL);
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+    console.log("Barcode scanner script loaded.");
 
-        // Define the error reporting function
-        function reportClientError(errorMessage, details) {
-            console.log("Reporting client error:", errorMessage, details);
-            fetch('/log_client_error', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ error: errorMessage, details: details })
-            })
-            .then(response => response.json())
-            .then(data => console.log('Error reported successfully:', data))
-            .catch(err => console.error('Error reporting failed:', err));
-        }
+    // Open the native camera/file picker
+    function openNativeCamera() {
+      document.getElementById("native-camera-input").click();
+    }
 
-        // Barcode decode function with forced error branch for testing.
-        function decodeBarcode(dataURL) {
-            Quagga.decodeSingle({
-                src: dataURL,
-                numOfWorkers: 0,
-                decoder: {
-                    readers: [
-                        "code_128_reader",
-                        "ean_reader",
-                        "ean_8_reader",
-                        "code_39_reader",
-                        "upc_reader"
-                    ]
-                }
-            }, function (result) {
+    // Listen for changes on the hidden file input (i.e., when a picture is taken)
+    document.getElementById("native-camera-input").addEventListener("change", function (e) {
+      if (e.target.files && e.target.files[0]) {
+        var file = e.target.files[0];
+        var reader = new FileReader();
+        reader.onload = function (evt) {
+          var dataURL = evt.target.result;
+          console.log("Image captured, attempting to decode barcode.");
+          // Pass the captured image to Quagga for decoding
+          decodeBarcode(dataURL);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
 
-                if (result && result.codeResult) {
-                    var code = result.codeResult.code;
-                    if (code.length === 13 && code.charAt(0) === '0') {
-                        code = code.slice(1);
-                    }
-                    document.getElementById('barcode-id').value = code;
-                    console.log("Barcode detected:", code);
-                } else {
-                    console.log("No barcode detected in the image. Triggering error reporting.");
-                    alert("No barcode detected in the image. Please try again.");
-                    reportClientError("Barcode not detected", "The uploaded image did not contain a readable barcode.");
-                }
-            });
-        }
-    </script>
+    // Define the error reporting function
+    function reportClientError(errorMessage, details) {
+      console.log("Reporting client error:", errorMessage, details);
+      fetch('/log_client_error', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ error: errorMessage, details: details })
+      })
+      .then(response => response.json())
+      .then(data => console.log('Error reported successfully:', data))
+      .catch(err => console.error('Error reporting failed:', err));
+    }
+
+    // Barcode decode function with forced error branch for testing.
+    function decodeBarcode(dataURL) {
+      Quagga.decodeSingle({
+          src: dataURL,
+          numOfWorkers: 0,
+          decoder: {
+              readers: [
+                  "code_128_reader",
+                  "ean_reader",
+                  "ean_8_reader",
+                  "code_39_reader",
+                  "upc_reader"
+              ]
+          }
+      }, function (result) {
+          if (result && result.codeResult) {
+              var code = result.codeResult.code;
+              if (code.length === 13 && code.charAt(0) === '0') {
+                  code = code.slice(1);
+              }
+              document.getElementById('barcode-id').value = code;
+              console.log("Barcode detected:", code);
+          } else {
+              console.log("No barcode detected in the image. Triggering error reporting.");
+              alert("No barcode detected in the image. Please try again.");
+              reportClientError("Barcode not detected", "The uploaded image did not contain a readable barcode.");
+          }
+      });
+    }
+  </script>
 </body>
 </html>
