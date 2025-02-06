@@ -21,41 +21,52 @@
             background-blend-mode: darken;
         }
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #000;
-            color: #FFD700;
-            padding: 20px;
-            border-bottom: 3px solid #FFD700;
-        }
-        header .logo {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        header .logo-text {
-            font-size: 36px;
-            font-weight: bold;
-        }
-        header .subtitle {
-            font-size: 16px;
-            color: #FFD700;
-        }
-        header nav ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: space-between;
-            width: 200px;
-        }
-        header nav ul li a {
-            color: #FFD700;
-            text-decoration: none;
-            font-weight: bold;
-            transition: color 0.6s ease, background-color 0.6s ease;
-        }
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #000;
+    color: #FFD700;
+    padding: 20px;
+    border-bottom: 3px solid #FFD700;
+}
+
+/* Remove fixed width and use flex properties */
+header .logo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+header nav {
+    /* This makes the nav expand to the available space and align items to the right */
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+header nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 20px;  /* Adjust this gap as needed */
+    /* Remove any fixed width such as width: 250px; */
+}
+
+header nav ul li a {
+    color: #FFD700;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.6s ease, background-color 0.6s ease;
+}
+
+header nav ul li a:hover {
+    color: #000;
+    background-color: #FFD700;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
         header nav ul li a:hover {
             color: #000;
             background-color: #FFD700;
@@ -204,179 +215,190 @@
     </style>
 </head>
 <body>
-<header>
-    <div class="logo">
-        <div class="logo-text">Wentworth</div>
-        <div class="subtitle">Institute of Technology</div>
-    </div>
-    <nav>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">About</a></li>
-            <li><a href="#contact">Contact</a></li>
-        </ul>
-    </nav>
-</header>
-
-<main>
-    <div class="logo-container">
-    <img src="../static/uploads/BAC_Logo_tr.png" alt="Logo" class="logo-img">
-</div>
-
-<style>
-    .logo-container {
-        display: flex;
-        justify-content: center; /* Center the logo */
-        align-items: center;
-        width: 100%;
-        padding: 10px;
-    }
-
-    .logo-img {
-        max-width: 100%;  /* Ensures the image scales down on smaller screens */
-        height: auto;  /* Maintains aspect ratio */
-        width: 250px;  /* Increased by 25% from 200px */
-    }
-
-    /* Media query to increase size on larger screens */
-    @media (min-width: 768px) {
-        .logo-img {
-            width: 375px; /* Increased by 25% from 300px */
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .logo-img {
-            width: 500px; /* Increased by 25% from 400px */
-        }
-    }
-</style>
-    <section class="upload-section">
-        <form method="post" enctype="multipart/form-data">
-            <label for="barcode-id">Enter Barcode ID:</label>
-            <input type="text" name="barcode_id" id="barcode-id" placeholder="Enter Barcode ID" maxlength="20" required>
-            <button type="submit">Submit</button>
-            <!-- Button to trigger native camera capture -->
-            <button type="button" onclick="openNativeCamera()">Scan Barcode</button>
-        </form>
-        <!-- Hidden file input for native camera capture -->
-        <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
-    </section>
-
-    <section class="results-section">
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <ul>
-            {% for message in messages %}
-            <li>{{ message }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-        {% endwith %}
-
-        {% if item_name and price %}
-        <div class="result-box">
-            <h3>{{ item_name }}</h3>
-            <p>Price: ${{ price }}</p>
+    <header>
+        <div class="logo">
+            <div class="logo-text">Wentworth</div>
+            <div class="subtitle">Institute of Technology</div>
         </div>
-        {% endif %}
+        <nav>
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <!-- New Dashboard link -->
+                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            </ul>
+        </nav>
+    </header>
 
-        {% if processed_image_path %}
-        <h2>Processed Image</h2>
-        <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
-             alt="Processed Barcode Image">
-        {% endif %}
-    </section>
-<!-- About Section -->
-<section id="about" class="about-section" style="background-color: rgba(255, 255, 255, 0.9); padding: 40px; border-radius: 8px; margin: 20px auto; max-width: 800px;">
-    <h2 style="text-align: center; color: #800000;">About Our App</h2>
-    <p style="font-size: 18px; line-height: 1.6;">
-        Our barcode scanner app is an innovative solution developed by the Business Affairs Committee of the Wentworth Student Government. Designed specifically for college students, it offers a quick and reliable way to navigate Tessie’s market—empowering you to check product prices at a glance.
-    </p>
-    <p style="font-size: 18px; line-height: 1.6;">
-        Built with Python, JavaScript and HTML, the app combines state-of-the-art scanning technology with a user-friendly interface to ensure smooth and accurate performance. Our passionate team created this tool to meet the everyday needs of students, making your shopping experience more convenient.
-    </p>
-    <p style="font-size: 18px; line-height: 1.6;">
-        Interested in how we built it, or want to collaborate on the project? Check out our GitHub!
-    </p>
-    <div style="text-align: center; margin-top: 20px;">
-        <a href="https://github.com/jdank417/GroceryBarcodeScanner" target="_blank" style="font-size: 18px; color: #000000; text-decoration: none; border: 2px solid #FFD700; padding: 10px 20px; border-radius: 5px;">Visit our GitHub Repository</a>
-    </div>
-</section>
+    <main>
+        <div class="logo-container">
+            <img src="../static/uploads/BAC_Logo_tr.png" alt="Logo" class="logo-img">
+        </div>
 
-
-
-    <!-- Contact Section -->
-    <section id="contact" class="contact-section">
-        <h2>Contact Us</h2>
-        <ul>
-            <li>Jason Dank (PM/Fullstack): <a href="mailto:dankj@wit.edu">dankj@wit.edu</a></li>
-            <li>Aliya Vagapova (UI/UX): <a href="mailto:vagapovaa@wit.edu">vagapovaa@wit.edu</a></li>
-            <li>WSG: <a href="wsg@wit.edu">wsg@wit.edu</a></li>
-        </ul>
-    </section>
-</main>
-
-<footer>
-    <p>&copy; 2025 Wentworth Institute of Technology. All Rights Reserved.</p>
-</footer>
-
-<!-- JavaScript to handle native camera capture and barcode decoding -->
-<script>
-    // Display a pop-up message on page load
-    window.onload = function () {
-        if (!sessionStorage.getItem("popupShown")) {
-            alert("Note: The camera function is in beta testing.");
-            sessionStorage.setItem("popupShown", "true");
-        }
-    };
-
-    // Open the native camera/file picker
-    function openNativeCamera() {
-        document.getElementById("native-camera-input").click();
-    }
-
-    // Listen for changes on the hidden file input (i.e. when a picture is taken)
-    document.getElementById("native-camera-input").addEventListener("change", function (e) {
-        if (e.target.files && e.target.files[0]) {
-            var file = e.target.files[0];
-            var reader = new FileReader();
-            reader.onload = function (evt) {
-                var dataURL = evt.target.result;
-                // Pass the captured image to Quagga for decoding
-                decodeBarcode(dataURL);
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // Function to decode the barcode from the captured image data URL
-    function decodeBarcode(dataURL) {
-        Quagga.decodeSingle({
-            src: dataURL,
-            numOfWorkers: 0,  // Must be 0 when using decodeSingle
-            decoder: {
-                readers: [
-                    "code_128_reader",
-                    "ean_reader",
-                    "ean_8_reader",
-                    "code_39_reader",
-                    "upc_reader"
-                ]
+        <style>
+            .logo-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+                padding: 10px;
             }
-        }, function (result) {
-            if (result && result.codeResult) {
-                var code = result.codeResult.code;
-                // Correction: remove leading zero for 13-digit codes if necessary
-                if (code.length === 13 && code.charAt(0) === '0') {
-                    code = code.slice(1);
+            .logo-img {
+                max-width: 100%;
+                height: auto;
+                width: 250px;
+            }
+            @media (min-width: 768px) {
+                .logo-img {
+                    width: 375px;
                 }
-                document.getElementById('barcode-id').value = code;
-            } else {
-                alert("No barcode detected in the image. Please try again.");
+            }
+            @media (min-width: 1024px) {
+                .logo-img {
+                    width: 500px;
+                }
+            }
+        </style>
+
+        <section class="upload-section">
+            <form method="post" enctype="multipart/form-data">
+                <label for="barcode-id">Enter Barcode ID:</label>
+                <input type="text" name="barcode_id" id="barcode-id" placeholder="Enter Barcode ID" maxlength="20" required>
+                <button type="submit">Submit</button>
+                <!-- Button to trigger native camera capture -->
+                <button type="button" onclick="openNativeCamera()">Scan Barcode</button>
+            </form>
+            <!-- Hidden file input for native camera capture -->
+            <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
+        </section>
+
+        <section class="results-section">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <ul>
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+
+            {% if item_name and price %}
+                <div class="result-box">
+                    <h3>{{ item_name }}</h3>
+                    <p>Price: ${{ price }}</p>
+                </div>
+            {% endif %}
+
+            {% if processed_image_path %}
+                <h2>Processed Image</h2>
+                <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
+                     alt="Processed Barcode Image">
+            {% endif %}
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="about-section" style="background-color: rgba(255, 255, 255, 0.9); padding: 40px; border-radius: 8px; margin: 20px auto; max-width: 800px;">
+            <h2 style="text-align: center; color: #800000;">About Our App</h2>
+            <p style="font-size: 18px; line-height: 1.6;">
+                Our barcode scanner app is an innovative solution developed by the Business Affairs Committee of the Wentworth Student Government. Designed specifically for college students, it offers a quick and reliable way to navigate Tessie’s market—empowering you to check product prices at a glance.
+            </p>
+            <p style="font-size: 18px; line-height: 1.6;">
+                Built with Python, JavaScript and HTML, the app combines state-of-the-art scanning technology with a user-friendly interface to ensure smooth and accurate performance. Our passionate team created this tool to meet the everyday needs of students, making your shopping experience more convenient.
+            </p>
+            <p style="font-size: 18px; line-height: 1.6;">
+                Interested in how we built it, or want to collaborate on the project? Check out our GitHub!
+            </p>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="https://github.com/jdank417/GroceryBarcodeScanner" target="_blank" style="font-size: 18px; color: #000000; text-decoration: none; border: 2px solid #FFD700; padding: 10px 20px; border-radius: 5px;">Visit our GitHub Repository</a>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="contact-section">
+            <h2>Contact Us</h2>
+            <ul>
+                <li>Jason Dank (PM/Fullstack): <a href="mailto:dankj@wit.edu">dankj@wit.edu</a></li>
+                <li>Aliya Vagapova (UI/UX): <a href="mailto:vagapovaa@wit.edu">vagapovaa@wit.edu</a></li>
+                <li>WSG: <a href="mailto:wsg@wit.edu">wsg@wit.edu</a></li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Wentworth Institute of Technology. All Rights Reserved.</p>
+    </footer>
+
+    <!-- JavaScript to handle native camera capture and barcode decoding -->
+    <script>
+        console.log("Barcode scanner script loaded.");
+
+        // Open the native camera/file picker
+        function openNativeCamera() {
+            document.getElementById("native-camera-input").click();
+        }
+
+        // Listen for changes on the hidden file input (i.e., when a picture is taken)
+        document.getElementById("native-camera-input").addEventListener("change", function (e) {
+            if (e.target.files && e.target.files[0]) {
+                var file = e.target.files[0];
+                var reader = new FileReader();
+                reader.onload = function (evt) {
+                    var dataURL = evt.target.result;
+                    console.log("Image captured, attempting to decode barcode.");
+                    // Pass the captured image to Quagga for decoding
+                    decodeBarcode(dataURL);
+                };
+                reader.readAsDataURL(file);
             }
         });
-    }
-</script>
+
+        // Define the error reporting function
+        function reportClientError(errorMessage, details) {
+            console.log("Reporting client error:", errorMessage, details);
+            fetch('/log_client_error', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ error: errorMessage, details: details })
+            })
+            .then(response => response.json())
+            .then(data => console.log('Error reported successfully:', data))
+            .catch(err => console.error('Error reporting failed:', err));
+        }
+
+        // Barcode decode function with forced error branch for testing.
+        function decodeBarcode(dataURL) {
+            Quagga.decodeSingle({
+                src: dataURL,
+                numOfWorkers: 0,
+                decoder: {
+                    readers: [
+                        "code_128_reader",
+                        "ean_reader",
+                        "ean_8_reader",
+                        "code_39_reader",
+                        "upc_reader"
+                    ]
+                }
+            }, function (result) {
+
+                if (result && result.codeResult) {
+                    var code = result.codeResult.code;
+                    if (code.length === 13 && code.charAt(0) === '0') {
+                        code = code.slice(1);
+                    }
+                    document.getElementById('barcode-id').value = code;
+                    console.log("Barcode detected:", code);
+                } else {
+                    console.log("No barcode detected in the image. Triggering error reporting.");
+                    alert("No barcode detected in the image. Please try again.");
+                    reportClientError("Barcode not detected", "The uploaded image did not contain a readable barcode.");
+                }
+            });
+        }
+    </script>
 </body>
 </html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitoring Dashboard</title>
+  <!-- Include Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Include Moment.js (required by the adapter) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <!-- Include the Moment adapter for Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    table { border-collapse: collapse; width: 50%; margin: auto; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th { background-color: #f2f2f2; }
+    .nav { text-align: right; margin-bottom: 20px; }
+    .nav a { text-decoration: none; color: #333; font-weight: bold; }
+    .chart-container { width: 80%; margin: 0 auto 40px; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+      <a href="{{ url_for('index') }}">Back to App</a>
+  </div>
+  <h1 style="text-align: center;">Application Metrics Dashboard</h1>
+
+  <!-- Metrics Table -->
+  <table>
+      <tr>
+          <th>Metric</th>
+          <th>Count</th>
+      </tr>
+      <tr>
+          <td>Successful Lookups</td>
+          <td>{{ metrics.lookup_success_total }}</td>
+      </tr>
+      <tr>
+          <td>Lookup Failures (UPC not found)</td>
+          <td>{{ metrics.lookup_failure_total }}</td>
+      </tr>
+      <tr>
+          <td>Barcode Decode Failures</td>
+          <td>{{ metrics.barcode_scan_failure_total }}</td>
+      </tr>
+  </table>
+
+  <!-- Chart Section for Successful Lookups -->
+  <div class="chart-container">
+      <canvas id="lookupSuccessChart"></canvas>
+  </div>
+
+  <!-- Chart Section for Lookup Failures -->
+  <div class="chart-container">
+      <canvas id="lookupFailureChart"></canvas>
+  </div>
+
+  <!-- Chart Section for Barcode Decode Failures -->
+  <div class="chart-container">
+      <canvas id="barcodeFailureChart"></canvas>
+  </div>
+
+  <script>
+    // Helper function to create a chart for a given event type.
+    // Optionally, you can pass a group_by parameter (e.g., "minute" or "hour").
+    function createChart(canvasId, eventType, labelText, groupBy="hour") {
+      fetch("{{ url_for('historical_data') }}?event_type=" + eventType + "&group_by=" + groupBy)
+        .then(response => response.json())
+        .then(data => {
+          console.log("Historical data for " + eventType + ":", data);
+          const labels = data.map(item => item.hour);
+          const counts = data.map(item => item.count);
+
+          const ctx = document.getElementById(canvasId).getContext('2d');
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: labels,
+              datasets: [{
+                label: labelText,
+                data: counts,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                fill: true
+              }]
+            },
+            options: {
+              scales: {
+                x: {
+                  type: 'time',
+                  time: {
+                    unit: groupBy === "minute" ? 'minute' : 'hour'
+                  },
+                  title: {
+                    display: true,
+                    text: 'Date & Time'
+                  }
+                },
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Count'
+                  }
+                }
+              }
+            }
+          });
+        })
+        .catch(error => {
+          console.error("Error fetching historical data for " + eventType + ":", error);
+        });
+    }
+
+    // Create charts for each event type.
+    createChart('lookupSuccessChart', 'lookup_success', 'Successful Lookups (Past 30 Days)', "hour");
+    createChart('lookupFailureChart', 'lookup_failure', 'Lookup Failures (Past 30 Days)', "hour");
+    createChart('barcodeFailureChart', 'barcode_scan_failure', 'Barcode Decode Failures (Past 30 Days)', "hour");
+  </script>
+</body>
+</html>
