@@ -8,6 +8,8 @@ import sqlite3
 import datetime
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 import re  # For SKU sanitization
+import queue
+import threading
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # Use environment variables in production.
@@ -38,10 +40,8 @@ def init_db():
     """
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-
     # Drop old table -- comment out if you need to keep existing data
     c.execute("DROP TABLE IF EXISTS events")
-
     # Create new table including sku and item_name columns
     c.execute("""
         CREATE TABLE IF NOT EXISTS events (
@@ -55,18 +55,51 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Initialize the database
+init_db()
+
+# ---------------------------
+# Asynchronous Logging Setup
+# ---------------------------
+
+# Create a thread-safe logging queue
+log_queue = queue.Queue()
+
+def log_event_worker():
+    """
+    Worker thread function that processes log events from the queue
+    and writes them to the SQLite database.
+    """
+    # Open a connection with check_same_thread=False so it can be used in this thread.
+    conn = sqlite3.connect(DATABASE, check_same_thread=False)
+    c = conn.cursor()
+    while True:
+        event = log_queue.get()
+        if event is None:
+            # A sentinel value (None) indicates shutdown.
+            break
+        event_type, sku, item_name, timestamp = event
+        try:
+            c.execute("""
+                INSERT INTO events (event_type, timestamp, sku, item_name)
+                VALUES (?, ?, ?, ?)
+            """, (event_type, timestamp, sku, item_name))
+            conn.commit()
+        except Exception as e:
+            logger.error(f"Error logging event: {e}")
+        log_queue.task_done()
+    conn.close()
+
+# Start the logging worker thread as a daemon so it exits when the app stops.
+log_thread = threading.Thread(target=log_event_worker, daemon=True)
+log_thread.start()
+
 def log_event_sql(event_type, sku=None, item_name=None):
     """
-    Log an event to the SQLite DB, including optional SKU and item name.
+    Instead of directly writing to the database, place the event into the log queue.
     """
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    c.execute("""
-        INSERT INTO events (event_type, timestamp, sku, item_name)
-        VALUES (?, ?, ?, ?)
-    """, (event_type, int(time.time()), sku, item_name))
-    conn.commit()
-    conn.close()
+    timestamp = int(time.time())
+    log_queue.put((event_type, sku, item_name, timestamp))
 
 def get_aggregated_counts():
     """
@@ -81,7 +114,9 @@ def get_aggregated_counts():
     conn.close()
     return counts
 
-init_db()
+# ---------------------------
+# Application Logic
+# ---------------------------
 
 @lru_cache(maxsize=100)
 def lookup_item(barcode_data):
@@ -96,7 +131,7 @@ def lookup_item(barcode_data):
         item_name = item_info["ItemName"].values[0]
         item_price = item_info["ItemPrice"].values[0]
 
-        # Prometheus + DB logging for a successful lookup
+        # Prometheus + asynchronous DB logging for a successful lookup
         lookup_success_counter.inc()
         log_event_sql("lookup_success", sku=barcode_data, item_name=item_name)
         return item_name, item_price
@@ -149,7 +184,7 @@ def log_client_error():
     data = request.get_json()
     error = data.get("error", "No error provided")
     details = data.get("details", "")
-    # Optionally capture sku if client provides it
+    # Optionally capture SKU if client provides it
     sku = data.get("sku", None)
 
     barcode_scan_failure_counter.inc()
