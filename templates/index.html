@@ -7,6 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <!-- Bootstrap CSS -->
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <!-- QuaggaJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
   <!-- Custom CSS -->
@@ -257,47 +259,52 @@
         <img src="../static/uploads/BAC_Logo_tr.png" alt="Logo" class="logo-img">
       </div>
 
-      <!-- Upload Section -->
+      <!-- Upload / Scan Section -->
       <section class="section-card">
-        <form method="post" enctype="multipart/form-data">
-          <div class="form-group">
-            <label for="barcode-id" class="font-weight-bold">Enter Barcode ID:</label>
-            <input type="text" name="barcode_id" id="barcode-id" class="form-control" placeholder="Enter Barcode ID" maxlength="20" required>
+        <p class="text-center text-muted" style="font-size: 16px;">
+          You can either enter the UPC manually or scan the barcode using your camera.
+        </p>
+        <div class="row">
+          <!-- Manual Entry Column -->
+          <div class="col-md-6">
+            <form id="barcodeForm" method="post" enctype="multipart/form-data">
+              <div class="form-group">
+                <label for="barcode-id" class="font-weight-bold">Enter Barcode ID:</label>
+                <input type="text" name="barcode_id" id="barcode-id" class="form-control" placeholder="Enter UPC here" maxlength="20" required>
+              </div>
+              <button type="submit" class="btn btn-custom">Submit</button>
+            </form>
           </div>
-          <div class="form-group d-flex justify-content-between">
-            <button type="submit" class="btn btn-custom">Submit</button>
-            <!-- Button to trigger native camera capture -->
-            <button type="button" class="btn btn-custom" onclick="openNativeCamera()">Scan Barcode</button>
+          <!-- Camera Scan Column -->
+          <div class="col-md-6 text-center">
+            <p class="text-muted">Or scan your barcode with your camera</p>
+            <button type="button" class="btn btn-custom" onclick="openNativeCamera()">
+              <i class="fas fa-camera"></i> Scan Barcode Using Camera
+            </button>
+            <!-- Hidden file input for native camera capture -->
+            <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
           </div>
-        </form>
-        <!-- Hidden file input for native camera capture -->
-        <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
+        </div>
+        <!-- Feedback element for scan errors -->
+        <div id="scan-feedback" class="alert alert-warning mt-3" style="display:none;">
+          No barcode detected. Please try again or ensure the barcode is clearly visible.
+        </div>
       </section>
 
       <!-- Results Section -->
       <section class="section-card">
         {% with messages = get_flashed_messages() %}
           {% if messages %}
-            <div class="alert alert-info" role="alert">
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
               {% for message in messages %}
                 <p class="mb-0">{{ message }}</p>
               {% endfor %}
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
             </div>
           {% endif %}
         {% endwith %}
-        {% if item_name and price %}
-          <div class="result-box">
-            <h3>{{ item_name }}</h3>
-            <p>Price: ${{ price }}</p>
-          </div>
-        {% endif %}
-        {% if processed_image_path %}
-          <h2 class="text-center text-danger">Processed Image</h2>
-          <div class="text-center">
-            <img src="{{ url_for('static', filename='uploads/' + processed_image_path.split('/')[-1]) }}"
-                 alt="Processed Barcode Image" class="img-fluid rounded" style="max-width: 200px;">
-          </div>
-        {% endif %}
       </section>
 
       <!-- About Section -->
@@ -392,7 +399,7 @@
       .catch(err => console.error('Error reporting failed:', err));
     }
 
-    // Barcode decode function with forced error branch for testing.
+    // Barcode decode function with auto-submit functionality.
     function decodeBarcode(dataURL) {
       Quagga.decodeSingle({
           src: dataURL,
@@ -412,11 +419,19 @@
               if (code.length === 13 && code.charAt(0) === '0') {
                   code = code.slice(1);
               }
-              document.getElementById('barcode-id').value = code;
+              var barcodeInput = document.getElementById('barcode-id');
+              barcodeInput.value = code;
               console.log("Barcode detected:", code);
+              // Auto-submit the form after a successful scan
+              document.getElementById('barcodeForm').submit();
           } else {
               console.log("No barcode detected in the image. Triggering error reporting.");
-              alert("No barcode detected in the image. Please try again.");
+              // Show the inline error message
+              var feedbackEl = document.getElementById('scan-feedback');
+              feedbackEl.style.display = 'block';
+              setTimeout(function() {
+                feedbackEl.style.display = 'none';
+              }, 3000);
               reportClientError("Barcode not detected", "The uploaded image did not contain a readable barcode.");
           }
       });
