@@ -5,9 +5,13 @@
   <title>Monitoring Dashboard</title>
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
   <!-- Bootstrap CSS -->
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Custom CSS -->
+
+  <!-- Bootstrap Datepicker (optional) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css">
+
   <style>
     :root {
       --bg-color: #f8f9fa;
@@ -15,42 +19,22 @@
       --card-bg: #fff;
       --card-border: #dee2e6;
     }
-
     [data-theme="dark"] {
       --bg-color: #343a40;
       --text-color: #f8f9fa;
       --card-bg: #495057;
       --card-border: #6c757d;
     }
-
     body {
       font-family: 'Roboto', sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
       margin: 40px;
     }
-
-    .nav a {
-      text-decoration: none;
-      color: var(--text-color);
-      font-weight: bold;
-    }
-
-    .nav a:hover {
-      color: #007bff;
-    }
-
     .card {
       background-color: var(--card-bg);
       border: 1px solid var(--card-border);
     }
-
-    .chart-container {
-      width: 100%;
-      max-width: 900px;
-      margin: 40px auto;
-    }
-
     .toggle-theme {
       cursor: pointer;
       font-size: 0.9rem;
@@ -58,7 +42,25 @@
       background: none;
       color: var(--text-color);
     }
+    .chart-container {
+      width: 100%;
+      max-width: 900px;
+      margin: 40px auto;
+    }
+    /* Hide item events container by default (we'll toggle it) */
+    #itemEventsContainer {
+      max-width: 900px;
+      margin: 20px auto;
+      display: none;
+    }
+    table {
+      width: 100%;
+    }
+    th, td {
+      padding: 8px;
+    }
   </style>
+
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Moment.js -->
@@ -67,61 +69,104 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
 </head>
 <body>
-  <!-- Navigation and Dark Mode Toggle -->
+  <!-- Top Nav + Dark Mode Toggle -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <a href="{{ url_for('index') }}">Back to App</a>
+      <a href="{{ url_for('index') }}" style="text-decoration: none; color: var(--text-color); font-weight: bold;">
+        Back to App
+      </a>
     </div>
-    <div>
-      <button class="toggle-theme" id="themeToggle">Switch to Dark Mode</button>
-    </div>
+    <button class="toggle-theme" id="themeToggle">Switch to Dark Mode</button>
   </div>
 
   <div class="container">
     <h1 class="text-center mb-4">Application Metrics Dashboard</h1>
 
     <!-- Metrics Cards -->
-    <div class="row">
-      <div class="col-md-4 mb-3">
-        <div class="card text-center">
+    <div class="row mb-3 text-center">
+      <div class="col-md-3 mb-3">
+        <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Successful Lookups</h5>
-            <p class="card-text display-4">{{ metrics.lookup_success_total }}</p>
+            <h5>Successful Lookups</h5>
+            <p class="display-4">{{ metrics.lookup_success_total }}</p>
           </div>
         </div>
       </div>
-      <div class="col-md-4 mb-3">
-        <div class="card text-center">
+      <div class="col-md-3 mb-3">
+        <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Lookup Failures (UPC not found)</h5>
-            <p class="card-text display-4">{{ metrics.lookup_failure_total }}</p>
+            <h5>Lookup Failures</h5>
+            <p class="display-4">{{ metrics.lookup_failure_total }}</p>
           </div>
         </div>
       </div>
-      <div class="col-md-4 mb-3">
-        <div class="card text-center">
+      <div class="col-md-3 mb-3">
+        <div class="card">
           <div class="card-body">
-            <h5 class="card-title">Barcode Decode Failures</h5>
-            <p class="card-text display-4">{{ metrics.barcode_scan_failure_total }}</p>
+            <h5>Barcode Failures</h5>
+            <p class="display-4">{{ metrics.barcode_scan_failure_total }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5>Success Rate</h5>
+            <p class="display-4">{{ metrics.success_rate }}%</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Combined Bar Chart Section -->
+    <!-- Date Range Form (for both chart and item events) -->
+    <form class="form-inline justify-content-center mb-4">
+      <div class="form-group mx-2">
+        <label for="startDate" class="mr-2">Start Date:</label>
+        <input type="text" class="form-control" id="startDate" placeholder="YYYY-MM-DD">
+      </div>
+      <div class="form-group mx-2">
+        <label for="endDate" class="mr-2">End Date:</label>
+        <input type="text" class="form-control" id="endDate" placeholder="YYYY-MM-DD">
+      </div>
+      <button type="button" class="btn btn-primary mx-2" id="updateChartBtn">Update Chart</button>
+      <!-- New button to show the item-level events -->
+      <button type="button" class="btn btn-secondary mx-2" id="showItemEventsBtn">Show Item Events</button>
+    </form>
+
+    <!-- Bar Chart -->
     <div class="chart-container">
       <canvas id="combinedBarChart"></canvas>
     </div>
+
+    <!-- Item Events Table -->
+    <div id="itemEventsContainer">
+      <h4>Item-Level Events (Success & Failures)</h4>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Event Type</th>
+            <th>SKU</th>
+            <th>Item Name</th>
+          </tr>
+        </thead>
+        <tbody id="itemEventsBody">
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <!-- Bootstrap and optional JavaScript -->
+  <!-- JS Dependencies: jQuery, Popper, Bootstrap, Datepicker -->
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
 
   <script>
     // Dark mode toggle
-    document.getElementById('themeToggle').addEventListener('click', function() {
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', function() {
       const htmlEl = document.documentElement;
       if (htmlEl.getAttribute('data-theme') === 'light') {
         htmlEl.setAttribute('data-theme', 'dark');
@@ -132,122 +177,221 @@
       }
     });
 
-    // Helper function to merge three datasets by their time labels.
-    function mergeDatasets(successData, lookupFailData, barcodeFailData) {
-      const timeSet = new Set();
-      // Collect all unique time labels from each dataset.
-      successData.forEach(item => timeSet.add(item.hour));
-      lookupFailData.forEach(item => timeSet.add(item.hour));
-      barcodeFailData.forEach(item => timeSet.add(item.hour));
+    // Initialize datepickers
+    $('#startDate').datepicker({
+      format: 'yyyy-mm-dd',
+      autoclose: true,
+      todayHighlight: true
+    });
+    $('#endDate').datepicker({
+      format: 'yyyy-mm-dd',
+      autoclose: true,
+      todayHighlight: true
+    });
 
-      // Convert to array and sort the times.
-      const times = Array.from(timeSet).sort();
-
-      // Helper to build an array of counts for a given dataset, aligned to the common time array.
-      function buildCounts(data) {
-        const map = {};
-        data.forEach(item => { map[item.hour] = item.count; });
-        return times.map(time => map[time] || 0);
-      }
-
-      return {
-        times: times,
-        successCounts: buildCounts(successData),
-        lookupFailCounts: buildCounts(lookupFailData),
-        barcodeFailCounts: buildCounts(barcodeFailData)
-      };
+    // Helper function to fetch hourly data for a given event type
+    function fetchEventData(eventType, startDate, endDate) {
+      const params = new URLSearchParams({ event_type: eventType, start_date: startDate, end_date: endDate });
+      return fetch("{{ url_for('historical_data') }}?" + params.toString())
+        .then(resp => {
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          return resp.json();
+        });
     }
 
-    // Fetch historical data for all three event types in parallel.
-    Promise.all([
-      fetch("{{ url_for('historical_data') }}?event_type=lookup_success&group_by=hour").then(r => r.json()),
-      fetch("{{ url_for('historical_data') }}?event_type=lookup_failure&group_by=hour").then(r => r.json()),
-      fetch("{{ url_for('historical_data') }}?event_type=barcode_scan_failure&group_by=hour").then(r => r.json())
-    ]).then(([successData, lookupFailData, barcodeFailData]) => {
-      console.log("Success data:", successData);
-      console.log("Lookup failure data:", lookupFailData);
-      console.log("Barcode failure data:", barcodeFailData);
+    // Merge data sets by their time key
+    function mergeDatasets(successData, failData, barcodeData) {
+      const timeSet = new Set();
+      successData.forEach(d => timeSet.add(d.hour));
+      failData.forEach(d => timeSet.add(d.hour));
+      barcodeData.forEach(d => timeSet.add(d.hour));
 
-      const merged = mergeDatasets(successData, lookupFailData, barcodeFailData);
-      const ctx = document.getElementById('combinedBarChart').getContext('2d');
+      const times = Array.from(timeSet).sort();
 
-      // Create a grouped bar chart using a category x-axis.
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: merged.times,
-          datasets: [
-            {
-              label: 'Successful Lookups',
-              data: merged.successCounts,
-              backgroundColor: 'rgba(0, 128, 0, 0.7)',  // Green
-              borderColor: 'rgba(0, 128, 0, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Lookup Failures',
-              data: merged.lookupFailCounts,
-              backgroundColor: 'rgba(255, 0, 0, 0.7)',  // Red
-              borderColor: 'rgba(255, 0, 0, 1)',
-              borderWidth: 1
-            },
-            {
-              label: 'Barcode Decode Failures',
-              data: merged.barcodeFailCounts,
-              backgroundColor: 'rgba(255, 255, 0, 0.7)',  // Yellow
-              borderColor: 'rgba(255, 255, 0, 1)',
-              borderWidth: 1
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          animation: {
-            duration: 1500,
-            easing: 'easeInOutQuart'
-          },
-          scales: {
-            x: {
-              type: 'category',
-              title: {
-                display: true,
-                text: 'Date & Time'
+      const mapData = (arr) => {
+        const map = {};
+        arr.forEach(d => map[d.hour] = d.count);
+        return map;
+      };
+
+      const sMap = mapData(successData);
+      const fMap = mapData(failData);
+      const bMap = mapData(barcodeData);
+
+      const merged = times.map(t => ({
+        time: t,
+        success: sMap[t] || 0,
+        fail: fMap[t] || 0,
+        barcode: bMap[t] || 0
+      }));
+
+      return merged;
+    }
+
+    let myChart = null;
+
+    function updateChart() {
+      const startDate = document.getElementById('startDate').value.trim();
+      const endDate = document.getElementById('endDate').value.trim();
+
+      Promise.all([
+        fetchEventData('lookup_success', startDate, endDate),
+        fetchEventData('lookup_failure', startDate, endDate),
+        fetchEventData('barcode_scan_failure', startDate, endDate)
+      ]).then(([successData, failData, barcodeData]) => {
+        const merged = mergeDatasets(successData, failData, barcodeData);
+
+        if (myChart) {
+          myChart.destroy();
+        }
+
+        const labels = merged.map(d => new Date(d.time));
+        const successCounts = merged.map(d => d.success);
+        const failCounts = merged.map(d => d.fail);
+        const barcodeCounts = merged.map(d => d.barcode);
+
+        const ctx = document.getElementById('combinedBarChart').getContext('2d');
+        myChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Successful Lookups',
+                data: successCounts,
+                backgroundColor: 'rgba(0, 128, 0, 0.7)',
+                borderColor: 'rgba(0, 128, 0, 1)',
+                borderWidth: 1
               },
-              grid: {
-                display: false
+              {
+                label: 'Lookup Failures',
+                data: failCounts,
+                backgroundColor: 'rgba(255, 0, 0, 0.7)',
+                borderColor: 'rgba(255, 0, 0, 1)',
+                borderWidth: 1
+              },
+              {
+                label: 'Barcode Failures',
+                data: barcodeCounts,
+                backgroundColor: 'rgba(255, 255, 0, 0.7)',
+                borderColor: 'rgba(255, 255, 0, 1)',
+                borderWidth: 1
               }
-            },
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Count'
-              }
-            }
+            ]
           },
-          plugins: {
-            tooltip: {
-              callbacks: {
-                // Format the tooltip time display using Moment.js.
-                title: (tooltipItems) => {
-                  const label = tooltipItems[0].label;
-                  return moment(label).format('MMM D, h:mm A');
+          options: {
+            responsive: true,
+            scales: {
+              x: {
+                type: 'time',
+                time: {
+                  unit: 'hour',
+                  displayFormats: {
+                    hour: 'MMM D, HH:00'
+                  }
                 },
-                label: (tooltipItem) => {
-                  return `Count: ${tooltipItem.parsed.y}`;
+                title: {
+                  display: true,
+                  text: 'Date & Time (Hourly)'
+                }
+              },
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Count'
                 }
               }
-            }
-          },
-          elements: {
-            bar: {
-              borderRadius: 5
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  title: (tooltipItems) => {
+                    const dt = tooltipItems[0].label;
+                    // Format tooltip time
+                    return moment(dt).format('MMM D, HH:00');
+                  },
+                  label: (tooltipItem) => {
+                    return `Count: ${tooltipItem.parsed.y}`;
+                  }
+                }
+              }
+            },
+            elements: {
+              bar: {
+                borderRadius: 5
+              }
             }
           }
-        }
+        });
+      }).catch(err => {
+        console.error("Error updating chart:", err);
       });
-    }).catch(error => {
-      console.error("Error fetching combined historical data:", error);
+    }
+
+    // Show item-level events in a table
+    function showItemEvents() {
+      const startDate = document.getElementById('startDate').value.trim();
+      const endDate = document.getElementById('endDate').value.trim();
+      const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+
+      fetch("{{ url_for('item_events') }}?" + params.toString())
+        .then(resp => {
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          return resp.json();
+        })
+        .then(data => {
+          const container = document.getElementById('itemEventsContainer');
+          container.style.display = 'block'; // show container
+
+          const tbody = document.getElementById('itemEventsBody');
+          tbody.innerHTML = '';
+
+          data.forEach(evt => {
+            const tr = document.createElement('tr');
+            const tdTime = document.createElement('td');
+            const tdType = document.createElement('td');
+            const tdSKU = document.createElement('td');
+            const tdName = document.createElement('td');
+
+            tdTime.textContent = evt.time;
+            tdType.textContent = evt.event_type;
+            tdSKU.textContent = evt.sku || '-';
+            tdName.textContent = evt.item_name || '-';
+
+            tr.appendChild(tdTime);
+            tr.appendChild(tdType);
+            tr.appendChild(tdSKU);
+            tr.appendChild(tdName);
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(err => {
+          console.error("Error fetching item events:", err);
+        });
+    }
+
+    // Initialize
+    document.getElementById('updateChartBtn').addEventListener('click', updateChart);
+    document.getElementById('showItemEventsBtn').addEventListener('click', showItemEvents);
+
+    // On DOM load, set default date range to last 7 days and load chart
+    window.addEventListener('DOMContentLoaded', () => {
+      const today = new Date();
+      const past = new Date();
+      past.setDate(today.getDate() - 7);
+
+      const yyyy = today.getFullYear(),
+            mm = String(today.getMonth() + 1).padStart(2, '0'),
+            dd = String(today.getDate()).padStart(2, '0');
+      const yyyyPast = past.getFullYear(),
+            mmPast = String(past.getMonth() + 1).padStart(2, '0'),
+            ddPast = String(past.getDate()).padStart(2, '0');
+
+      document.getElementById('startDate').value = `${yyyyPast}-${mmPast}-${ddPast}`;
+      document.getElementById('endDate').value = `${yyyy}-${mm}-${dd}`;
+
+      updateChart();
     });
   </script>
 </body>
