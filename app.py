@@ -7,6 +7,7 @@ import time
 import sqlite3
 import datetime
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
+import re  # For SKU sanitization
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # Use environment variables in production.
@@ -25,6 +26,7 @@ df["ItemNumber"] = df["ItemNumber"].str.replace(r'\.0$', '', regex=True).str.str
 lookup_success_counter = Counter("lookup_success_total", "Total successful UPC lookups")
 lookup_failure_counter = Counter("lookup_failure_total", "Total UPC lookups that did not find an item")
 barcode_scan_failure_counter = Counter("barcode_scan_failure_total", "Total barcode decode failures reported by client")
+non_numerical_value_counter = Counter("non_numerical_value_total", "Total non numerical SKU inputs that were sanitized to an empty string")
 
 DATABASE = "metrics.db"
 
@@ -73,7 +75,7 @@ def get_aggregated_counts():
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
     counts = {}
-    for event in ["lookup_success", "lookup_failure", "barcode_scan_failure"]:
+    for event in ["lookup_success", "lookup_failure", "barcode_scan_failure", "non_numerical_value"]:
         c.execute("SELECT COUNT(*) FROM events WHERE event_type = ?", (event,))
         counts[event] = c.fetchone()[0]
     conn.close()
@@ -94,7 +96,7 @@ def lookup_item(barcode_data):
         item_name = item_info["ItemName"].values[0]
         item_price = item_info["ItemPrice"].values[0]
 
-        # Prometheus + DB
+        # Prometheus + DB logging for a successful lookup
         lookup_success_counter.inc()
         log_event_sql("lookup_success", sku=barcode_data, item_name=item_name)
         return item_name, item_price
@@ -102,6 +104,17 @@ def lookup_item(barcode_data):
         lookup_failure_counter.inc()
         log_event_sql("lookup_failure", sku=barcode_data, item_name=None)
         return None, None
+
+def sanitize_sku(sku):
+    """
+    Sanitizes the SKU input to ensure it contains only digits and no spaces.
+    - Converts the input to a string.
+    - Strips leading/trailing whitespace.
+    - Removes all non-digit characters.
+    """
+    sku = str(sku).strip()  # Remove leading/trailing whitespace
+    sanitized = re.sub(r'\D', '', sku)  # Remove any non-digit characters
+    return sanitized
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -111,7 +124,15 @@ def index():
     if request.method == "POST":
         barcode_id = request.form.get("barcode_id")
         if barcode_id:
-            item_name, item_price = lookup_item(barcode_id)
+            # Sanitize the SKU input before processing.
+            sanitized_barcode = sanitize_sku(barcode_id)
+            if not sanitized_barcode:
+                # Log the non-numerical SKU input if sanitization results in an empty string.
+                non_numerical_value_counter.inc()
+                log_event_sql("non_numerical_value", sku=barcode_id, item_name="Non numerical value")
+                flash("Non numerical SKU input provided.", "error")
+                return render_template("index.html")
+            item_name, item_price = lookup_item(sanitized_barcode)
             if item_name and item_price:
                 flash(f"Item: {item_name}, Price: ${item_price}", "info")
             else:
@@ -123,8 +144,7 @@ def index():
 @app.route("/log_client_error", methods=["POST"])
 def log_client_error():
     """
-    If the client can provide SKU in the error, we could log that here as well.
-    For now, we just log the error details. Adjust if you want to store SKU or item_name.
+    Log client errors such as barcode scan failures.
     """
     data = request.get_json()
     error = data.get("error", "No error provided")
@@ -178,7 +198,7 @@ def historical_data():
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
 
-    # Fixed hour grouping
+    # Group events by hour.
     group_expression = "strftime('%Y-%m-%d %H:00:00', datetime(timestamp, 'unixepoch', 'localtime'))"
 
     query = f"""
@@ -269,7 +289,7 @@ def dashboard():
                 flash("Incorrect password. Please try again.", "error")
         return render_template("admin_login.html")
 
-    # Admin is authenticated, gather total metrics
+    # Admin is authenticated, gather total metrics.
     counts = get_aggregated_counts()
     success = counts.get("lookup_success", 0)
     fail = counts.get("lookup_failure", 0)
@@ -280,6 +300,7 @@ def dashboard():
         "lookup_success_total": success,
         "lookup_failure_total": fail,
         "barcode_scan_failure_total": counts.get("barcode_scan_failure", 0),
+        "non_numerical_value_total": counts.get("non_numerical_value", 0),
         "success_rate": round(success_rate, 2)
     }
     return render_template("dashboard.html", metrics=metrics_data)
