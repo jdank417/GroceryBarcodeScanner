@@ -5,13 +5,10 @@
   <title>Monitoring Dashboard</title>
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
   <!-- Bootstrap CSS -->
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-
-  <!-- Bootstrap Datepicker (optional) -->
+  <!-- Bootstrap Datepicker CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css">
-
   <style>
     :root {
       --bg-color: #f8f9fa;
@@ -47,7 +44,7 @@
       max-width: 900px;
       margin: 40px auto;
     }
-    /* Hide item events container by default (we'll toggle it) */
+    /* Hide item events container by default */
     #itemEventsContainer {
       max-width: 900px;
       margin: 20px auto;
@@ -60,7 +57,6 @@
       padding: 8px;
     }
   </style>
-
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Moment.js -->
@@ -69,7 +65,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
 </head>
 <body>
-  <!-- Top Nav + Dark Mode Toggle -->
+  <!-- Top Navigation and Dark Mode Toggle -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <a href="{{ url_for('index') }}" style="text-decoration: none; color: var(--text-color); font-weight: bold;">
@@ -88,6 +84,7 @@
         <div class="card">
           <div class="card-body">
             <h5>Successful Lookups</h5>
+            <!-- Ensure your backend aggregates lookup_success and search_product_success -->
             <p class="display-4">{{ metrics.lookup_success_total }}</p>
           </div>
         </div>
@@ -129,29 +126,28 @@
         <input type="text" class="form-control" id="endDate" placeholder="YYYY-MM-DD">
       </div>
       <button type="button" class="btn btn-primary mx-2" id="updateChartBtn">Update Chart</button>
-      <!-- New button to show the item-level events -->
       <button type="button" class="btn btn-secondary mx-2" id="showItemEventsBtn">Show Item Events</button>
     </form>
 
-    <!-- Bar Chart -->
+    <!-- Combined Bar Chart -->
     <div class="chart-container">
       <canvas id="combinedBarChart"></canvas>
     </div>
 
     <!-- Item Events Table -->
     <div id="itemEventsContainer">
-      <h4>Item-Level Events (Success & Failures)</h4>
+      <h4 class="mt-4">Item-Level Events</h4>
       <table class="table table-striped">
         <thead>
           <tr>
             <th>Time</th>
             <th>Event Type</th>
-            <th>SKU</th>
-            <th>Item Name</th>
+            <th>Search/UPC</th>
+            <th>Item / Search Results</th>
           </tr>
         </thead>
         <tbody id="itemEventsBody">
-          <!-- Populated by JS -->
+          <!-- Populated by JavaScript -->
         </tbody>
       </table>
     </div>
@@ -162,11 +158,12 @@
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
-
   <script>
-    // Dark mode toggle
-    const themeToggle = document.getElementById('themeToggle');
-    themeToggle.addEventListener('click', function() {
+    // Declare myChart globally using var
+    var myChart = null;
+
+    // Dark mode toggle functionality
+    document.getElementById('themeToggle').addEventListener('click', function() {
       const htmlEl = document.documentElement;
       if (htmlEl.getAttribute('data-theme') === 'light') {
         htmlEl.setAttribute('data-theme', 'dark');
@@ -189,7 +186,7 @@
       todayHighlight: true
     });
 
-    // Helper function to fetch hourly data for a given event type
+    // Helper function to fetch aggregated data for an event type from /api/historical.
     function fetchEventData(eventType, startDate, endDate) {
       const params = new URLSearchParams({ event_type: eventType, start_date: startDate, end_date: endDate });
       return fetch("{{ url_for('historical_data') }}?" + params.toString())
@@ -199,37 +196,13 @@
         });
     }
 
-    // Merge data sets by their time key
-    function mergeDatasets(successData, failData, barcodeData) {
-      const timeSet = new Set();
-      successData.forEach(d => timeSet.add(d.hour));
-      failData.forEach(d => timeSet.add(d.hour));
-      barcodeData.forEach(d => timeSet.add(d.hour));
-
-      const times = Array.from(timeSet).sort();
-
-      const mapData = (arr) => {
-        const map = {};
-        arr.forEach(d => map[d.hour] = d.count);
-        return map;
-      };
-
-      const sMap = mapData(successData);
-      const fMap = mapData(failData);
-      const bMap = mapData(barcodeData);
-
-      const merged = times.map(t => ({
-        time: t,
-        success: sMap[t] || 0,
-        fail: fMap[t] || 0,
-        barcode: bMap[t] || 0
-      }));
-
-      return merged;
+    // Helper function to extract the hour key from an aggregated object.
+    // It will try to use d.hour; if not present, it falls back to d.time.
+    function getHourKey(d) {
+      return d.hour || d.time;
     }
 
-    let myChart = null;
-
+    // Update chart: aggregate the raw data by hour (if needed) and merge the datasets.
     function updateChart() {
       const startDate = document.getElementById('startDate').value.trim();
       const endDate = document.getElementById('endDate').value.trim();
@@ -237,20 +210,75 @@
       Promise.all([
         fetchEventData('lookup_success', startDate, endDate),
         fetchEventData('lookup_failure', startDate, endDate),
-        fetchEventData('barcode_scan_failure', startDate, endDate)
-      ]).then(([successData, failData, barcodeData]) => {
-        const merged = mergeDatasets(successData, failData, barcodeData);
+        fetchEventData('barcode_scan_failure', startDate, endDate),
+        fetchEventData('search_product_success', startDate, endDate),
+        fetchEventData('search_product_failure', startDate, endDate)
+      ]).then(([lookupSuccessData, lookupFailureData, barcodeData, searchSuccessData, searchFailureData]) => {
+        console.log("lookup_success:", lookupSuccessData);
+        console.log("lookup_failure:", lookupFailureData);
+        console.log("barcode_scan_failure:", barcodeData);
+        console.log("search_product_success:", searchSuccessData);
+        console.log("search_product_failure:", searchFailureData);
 
+        // Combine lookup_success and search_product_success by their hour key.
+        const combinedSuccess = {};
+        lookupSuccessData.forEach(d => {
+          const key = getHourKey(d);
+          combinedSuccess[key] = (combinedSuccess[key] || 0) + d.count;
+        });
+        searchSuccessData.forEach(d => {
+          const key = getHourKey(d);
+          combinedSuccess[key] = (combinedSuccess[key] || 0) + d.count;
+        });
+        const combinedSuccessArray = Object.keys(combinedSuccess).map(key => ({ hour: key, count: combinedSuccess[key] }));
+        console.log("combinedSuccessArray:", combinedSuccessArray);
+
+        // Gather all hour keys from all datasets.
+        const allArrays = [combinedSuccessArray, lookupFailureData, barcodeData, searchFailureData];
+        const timeSet = new Set();
+        allArrays.forEach(arr => arr.forEach(d => timeSet.add(getHourKey(d))));
+        let times = Array.from(timeSet).sort();
+
+        // Fallback: if no data is returned, add a dummy data point.
+        if (times.length === 0) {
+          const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+          times = [now];
+          combinedSuccessArray.push({ hour: now, count: 0 });
+          lookupFailureData.push({ hour: now, count: 0 });
+          barcodeData.push({ hour: now, count: 0 });
+          searchFailureData.push({ hour: now, count: 0 });
+        }
+
+        // Merge data: for each hour, get counts from each aggregated dataset.
+        const mergedData = times.map(t => {
+          const successCount = combinedSuccessArray.find(d => getHourKey(d) === t)?.count || 0;
+          const failCount = lookupFailureData.find(d => getHourKey(d) === t)?.count || 0;
+          const barcodeCount = barcodeData.find(d => getHourKey(d) === t)?.count || 0;
+          const searchFailureCount = searchFailureData.find(d => getHourKey(d) === t)?.count || 0;
+          return {
+            hour: t,
+            success: successCount,
+            fail: failCount,
+            barcode: barcodeCount,
+            searchFailure: searchFailureCount
+          };
+        });
+        console.log("mergedData:", mergedData);
+
+        // Destroy previous chart instance if exists.
         if (myChart) {
           myChart.destroy();
         }
 
-        const labels = merged.map(d => new Date(d.time));
-        const successCounts = merged.map(d => d.success);
-        const failCounts = merged.map(d => d.fail);
-        const barcodeCounts = merged.map(d => d.barcode);
-
+        // Convert the hour string to a Date object.
+        // Replace the space with 'T' to form an ISO string.
+        const labels = mergedData.map(d => new Date(d.hour.replace(' ', 'T')));
+        const successCounts = mergedData.map(d => d.success);
+        const failCounts = mergedData.map(d => d.fail);
+        const barcodeCounts = mergedData.map(d => d.barcode);
+        const searchFailureCounts = mergedData.map(d => d.searchFailure);
         const ctx = document.getElementById('combinedBarChart').getContext('2d');
+
         myChart = new Chart(ctx, {
           type: 'bar',
           data: {
@@ -275,6 +303,13 @@
                 data: barcodeCounts,
                 backgroundColor: 'rgba(255, 255, 0, 0.7)',
                 borderColor: 'rgba(255, 255, 0, 1)',
+                borderWidth: 1
+              },
+              {
+                label: 'Product Search Failures',
+                data: searchFailureCounts,
+                backgroundColor: 'rgba(255, 165, 0, 0.7)',
+                borderColor: 'rgba(255, 165, 0, 1)',
                 borderWidth: 1
               }
             ]
@@ -308,12 +343,9 @@
                 callbacks: {
                   title: (tooltipItems) => {
                     const dt = tooltipItems[0].label;
-                    // Format tooltip time
                     return moment(dt).format('MMM D, HH:00');
                   },
-                  label: (tooltipItem) => {
-                    return `Count: ${tooltipItem.parsed.y}`;
-                  }
+                  label: (tooltipItem) => `Count: ${tooltipItem.parsed.y}`
                 }
               }
             },
@@ -329,12 +361,11 @@
       });
     }
 
-    // Show item-level events in a table
+    // Show item-level events in a table.
     function showItemEvents() {
       const startDate = document.getElementById('startDate').value.trim();
       const endDate = document.getElementById('endDate').value.trim();
       const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
-
       fetch("{{ url_for('item_events') }}?" + params.toString())
         .then(resp => {
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -342,23 +373,19 @@
         })
         .then(data => {
           const container = document.getElementById('itemEventsContainer');
-          container.style.display = 'block'; // show container
-
+          container.style.display = 'block';
           const tbody = document.getElementById('itemEventsBody');
           tbody.innerHTML = '';
-
           data.forEach(evt => {
             const tr = document.createElement('tr');
             const tdTime = document.createElement('td');
             const tdType = document.createElement('td');
             const tdSKU = document.createElement('td');
             const tdName = document.createElement('td');
-
             tdTime.textContent = evt.time;
             tdType.textContent = evt.event_type;
             tdSKU.textContent = evt.sku || '-';
             tdName.textContent = evt.item_name || '-';
-
             tr.appendChild(tdTime);
             tr.appendChild(tdType);
             tr.appendChild(tdSKU);
@@ -371,26 +398,23 @@
         });
     }
 
-    // Initialize
+    // Bind buttons to update chart and show item events.
     document.getElementById('updateChartBtn').addEventListener('click', updateChart);
     document.getElementById('showItemEventsBtn').addEventListener('click', showItemEvents);
 
-    // On DOM load, set default date range to last 7 days and load chart
+    // On DOM load, set default date range to last 7 days and load the chart.
     window.addEventListener('DOMContentLoaded', () => {
       const today = new Date();
       const past = new Date();
       past.setDate(today.getDate() - 7);
-
       const yyyy = today.getFullYear(),
             mm = String(today.getMonth() + 1).padStart(2, '0'),
             dd = String(today.getDate()).padStart(2, '0');
       const yyyyPast = past.getFullYear(),
             mmPast = String(past.getMonth() + 1).padStart(2, '0'),
             ddPast = String(past.getDate()).padStart(2, '0');
-
       document.getElementById('startDate').value = `${yyyyPast}-${mmPast}-${ddPast}`;
       document.getElementById('endDate').value = `${yyyy}-${mm}-${dd}`;
-
       updateChart();
     });
   </script>
