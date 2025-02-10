@@ -38,10 +38,9 @@
       padding: 0;
       background-color: var(--bg-color);
       color: var(--text-color);
-      background-image: url('../static/uploads/168227_hero.jpg');
+      background-image: url('../static/uploads/IMG_7383.jpg');
       background-size: cover;
       background-position: center;
-      /* Using blend mode to darken slightly by default */
       background-blend-mode: darken;
       min-height: 100vh;
       display: flex;
@@ -262,15 +261,15 @@
       <!-- Upload / Scan Section -->
       <section class="section-card">
         <p class="text-center text-muted" style="font-size: 16px;">
-          You can either enter the UPC manually or scan the barcode using your camera.
+          You can either Search Item Name, enter the UPC manually, or scan the barcode using your camera.
         </p>
         <div class="row">
           <!-- Manual Entry Column -->
           <div class="col-md-6">
             <form id="barcodeForm" method="post" enctype="multipart/form-data">
               <div class="form-group">
-                <label for="barcode-id" class="font-weight-bold">Enter Barcode ID:</label>
-                <input type="text" name="barcode_id" id="barcode-id" class="form-control" placeholder="Enter UPC here" maxlength="20" required>
+                <label for="barcode-id" class="font-weight-bold">Search Item Name or Enter Barcode ID:</label>
+                <input type="text" name="barcode_id" id="barcode-id" class="form-control" placeholder="Search Item Name or Enter UPC here" maxlength="20" required>
               </div>
               <button type="submit" class="btn btn-custom">Submit</button>
             </form>
@@ -297,7 +296,7 @@
           {% if messages %}
             <div class="alert alert-info alert-dismissible fade show" role="alert">
               {% for message in messages %}
-                <p class="mb-0">{{ message }}</p>
+                <p class="mb-0">{{ message|safe }}</p>
               {% endfor %}
               <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
@@ -344,10 +343,31 @@
     </div>
   </footer>
 
-  <!-- JavaScript (jQuery, Popper, Bootstrap) -->
+  <!-- Modal Notification (Intrusive) -->
+  <div class="modal fade" id="notificationModal" tabindex="-1" role="dialog" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="notificationModalLabel">Important Update</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          You can now search by product name in the search box! Try entering part of a product name.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal">Got it!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Dependencies: jQuery, Popper, Bootstrap -->
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
   <!-- Custom JavaScript -->
   <script>
     // Dark mode toggle functionality
@@ -436,6 +456,14 @@
           }
       });
     }
+
+    // Show the modal notification only on initial load using localStorage
+    $(document).ready(function() {
+      if (!localStorage.getItem('notificationModalShown')) {
+        $('#notificationModal').modal('show');
+        localStorage.setItem('notificationModalShown', 'true');
+      }
+    });
   </script>
 </body>
 </html>
