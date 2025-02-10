@@ -370,56 +370,55 @@
 
   <!-- Custom JavaScript -->
   <script>
-    // Dark mode toggle functionality
-    document.getElementById('themeToggle').addEventListener('click', function() {
-      const htmlEl = document.documentElement;
-      if (htmlEl.getAttribute('data-theme') === 'light') {
-        htmlEl.setAttribute('data-theme', 'dark');
-        this.textContent = "Switch to Light Mode";
-      } else {
-        htmlEl.setAttribute('data-theme', 'light');
-        this.textContent = "Switch to Dark Mode";
+    // Helper function: convert a data URL to a Blob.
+    function dataURLToBlob(dataURL) {
+      var arr = dataURL.split(','),
+          mime = arr[0].match(/:(.*?);/)[1],
+          bstr = atob(arr[1]),
+          n = bstr.length,
+          u8arr = new Uint8Array(n);
+      while(n--){
+          u8arr[n] = bstr.charCodeAt(n);
       }
-    });
-
-    console.log("Barcode scanner script loaded.");
-
-    // Open the native camera/file picker
-    function openNativeCamera() {
-      document.getElementById("native-camera-input").click();
+      return new Blob([u8arr], {type: mime});
     }
 
-    // Listen for changes on the hidden file input (i.e., when a picture is taken)
-    document.getElementById("native-camera-input").addEventListener("change", function (e) {
-      if (e.target.files && e.target.files[0]) {
-        var file = e.target.files[0];
-        var reader = new FileReader();
-        reader.onload = function (evt) {
-          var dataURL = evt.target.result;
-          console.log("Image captured, attempting to decode barcode.");
-          // Pass the captured image to Quagga for decoding
-          decodeBarcode(dataURL);
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    // Define the error reporting function
-    function reportClientError(errorMessage, details) {
+    // Updated error reporting function that sends the image file via FormData.
+    function reportClientError(errorMessage, details, imageData) {
       console.log("Reporting client error:", errorMessage, details);
-      fetch('/log_client_error', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ error: errorMessage, details: details })
-      })
-      .then(response => response.json())
-      .then(data => console.log('Error reported successfully:', data))
-      .catch(err => console.error('Error reporting failed:', err));
+
+      if (imageData) {
+        // Convert the dataURL to a Blob.
+        var blob = dataURLToBlob(imageData);
+        var formData = new FormData();
+        formData.append("barcode_image", blob, "failed_scan.jpg");
+        formData.append("error", errorMessage);
+        formData.append("details", details);
+
+        fetch('/log_client_error', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => console.log('Error reported successfully (with image):', data))
+        .catch(err => console.error('Error reporting failed:', err));
+      } else {
+        // If no image data, send as JSON.
+        let payload = { error: errorMessage, details: details };
+        fetch('/log_client_error', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => console.log('Error reported successfully (no image):', data))
+        .catch(err => console.error('Error reporting failed:', err));
+      }
     }
 
-    // Barcode decode function with auto-submit functionality.
+    // Barcode decode function.
     function decodeBarcode(dataURL) {
       Quagga.decodeSingle({
           src: dataURL,
@@ -442,22 +441,53 @@
               var barcodeInput = document.getElementById('barcode-id');
               barcodeInput.value = code;
               console.log("Barcode detected:", code);
-              // Auto-submit the form after a successful scan
+              // Auto-submit the form after a successful scan.
               document.getElementById('barcodeForm').submit();
           } else {
               console.log("No barcode detected in the image. Triggering error reporting.");
-              // Show the inline error message
               var feedbackEl = document.getElementById('scan-feedback');
               feedbackEl.style.display = 'block';
               setTimeout(function() {
                 feedbackEl.style.display = 'none';
               }, 3000);
-              reportClientError("Barcode not detected", "The uploaded image did not contain a readable barcode.");
+              // Pass the captured image data (dataURL) to the error reporting function.
+              reportClientError("Barcode not detected", "The uploaded image did not contain a readable barcode.", dataURL);
           }
       });
     }
 
-    // Show the modal notification only on initial load using localStorage
+    // Open native camera/file picker.
+    function openNativeCamera() {
+      document.getElementById("native-camera-input").click();
+    }
+
+    // Listen for changes on the hidden file input.
+    document.getElementById("native-camera-input").addEventListener("change", function (e) {
+      if (e.target.files && e.target.files[0]) {
+        var file = e.target.files[0];
+        var reader = new FileReader();
+        reader.onload = function (evt) {
+          var dataURL = evt.target.result;
+          console.log("Image captured, attempting to decode barcode.");
+          decodeBarcode(dataURL);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Dark mode toggle functionality.
+    document.getElementById('themeToggle').addEventListener('click', function() {
+      const htmlEl = document.documentElement;
+      if (htmlEl.getAttribute('data-theme') === 'light') {
+        htmlEl.setAttribute('data-theme', 'dark');
+        this.textContent = "Switch to Light Mode";
+      } else {
+        htmlEl.setAttribute('data-theme', 'light');
+        this.textContent = "Switch to Dark Mode";
+      }
+    });
+
+    // Show modal notification on initial load.
     $(document).ready(function() {
       if (!localStorage.getItem('notificationModalShown')) {
         $('#notificationModal').modal('show');

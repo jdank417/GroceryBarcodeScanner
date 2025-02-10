@@ -84,7 +84,6 @@
         <div class="card">
           <div class="card-body">
             <h5>Successful Lookups</h5>
-            <!-- Ensure your backend aggregates lookup_success and search_product_success -->
             <p class="display-4">{{ metrics.lookup_success_total }}</p>
           </div>
         </div>
@@ -113,6 +112,31 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Collapsible Section for Latest Failed Image -->
+    <div class="container mt-4 mb-4">
+      {% if latest_failed_image %}
+        <div class="card">
+          <div class="card-header" id="failedImageHeader">
+            <h5 class="mb-0">
+              <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#failedImageCollapse" aria-expanded="false" aria-controls="failedImageCollapse">
+                Show Latest Failed Barcode Image
+              </button>
+            </h5>
+          </div>
+          <div id="failedImageCollapse" class="collapse" aria-labelledby="failedImageHeader">
+            <div class="card-body">
+              <img src="{{ url_for('static', filename='uploads/' + latest_failed_image) }}?v={{ latest_failed_timestamp }}" alt="Latest Failed Barcode Image" class="img-fluid">
+              <p class="mt-2"><small>Timestamp: {{ latest_failed_timestamp }}</small></p>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="alert alert-info" role="alert">
+          No failed image available.
+        </div>
+      {% endif %}
     </div>
 
     <!-- Date Range Form (for both chart and item events) -->
@@ -158,11 +182,14 @@
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
   <script>
-    // Declare myChart globally using var
+    // Declare myChart globally.
     var myChart = null;
 
-    // Dark mode toggle functionality
+    // Dark mode toggle functionality.
     document.getElementById('themeToggle').addEventListener('click', function() {
       const htmlEl = document.documentElement;
       if (htmlEl.getAttribute('data-theme') === 'light') {
@@ -174,7 +201,7 @@
       }
     });
 
-    // Initialize datepickers
+    // Initialize datepickers.
     $('#startDate').datepicker({
       format: 'yyyy-mm-dd',
       autoclose: true,
@@ -186,7 +213,7 @@
       todayHighlight: true
     });
 
-    // Helper function to fetch aggregated data for an event type from /api/historical.
+    // Helper function to fetch aggregated event data.
     function fetchEventData(eventType, startDate, endDate) {
       const params = new URLSearchParams({ event_type: eventType, start_date: startDate, end_date: endDate });
       return fetch("{{ url_for('historical_data') }}?" + params.toString())
@@ -196,13 +223,12 @@
         });
     }
 
-    // Helper function to extract the hour key from an aggregated object.
-    // It will try to use d.hour; if not present, it falls back to d.time.
+    // Helper function to extract the hour key.
     function getHourKey(d) {
       return d.hour || d.time;
     }
 
-    // Update chart: aggregate the raw data by hour (if needed) and merge the datasets.
+    // Update chart: aggregate and merge datasets.
     function updateChart() {
       const startDate = document.getElementById('startDate').value.trim();
       const endDate = document.getElementById('endDate').value.trim();
@@ -214,13 +240,7 @@
         fetchEventData('search_product_success', startDate, endDate),
         fetchEventData('search_product_failure', startDate, endDate)
       ]).then(([lookupSuccessData, lookupFailureData, barcodeData, searchSuccessData, searchFailureData]) => {
-        console.log("lookup_success:", lookupSuccessData);
-        console.log("lookup_failure:", lookupFailureData);
-        console.log("barcode_scan_failure:", barcodeData);
-        console.log("search_product_success:", searchSuccessData);
-        console.log("search_product_failure:", searchFailureData);
-
-        // Combine lookup_success and search_product_success by their hour key.
+        // Combine lookup_success and search_product_success.
         const combinedSuccess = {};
         lookupSuccessData.forEach(d => {
           const key = getHourKey(d);
@@ -231,15 +251,13 @@
           combinedSuccess[key] = (combinedSuccess[key] || 0) + d.count;
         });
         const combinedSuccessArray = Object.keys(combinedSuccess).map(key => ({ hour: key, count: combinedSuccess[key] }));
-        console.log("combinedSuccessArray:", combinedSuccessArray);
 
-        // Gather all hour keys from all datasets.
+        // Gather all hour keys.
         const allArrays = [combinedSuccessArray, lookupFailureData, barcodeData, searchFailureData];
         const timeSet = new Set();
         allArrays.forEach(arr => arr.forEach(d => timeSet.add(getHourKey(d))));
         let times = Array.from(timeSet).sort();
 
-        // Fallback: if no data is returned, add a dummy data point.
         if (times.length === 0) {
           const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
           times = [now];
@@ -249,7 +267,6 @@
           searchFailureData.push({ hour: now, count: 0 });
         }
 
-        // Merge data: for each hour, get counts from each aggregated dataset.
         const mergedData = times.map(t => {
           const successCount = combinedSuccessArray.find(d => getHourKey(d) === t)?.count || 0;
           const failCount = lookupFailureData.find(d => getHourKey(d) === t)?.count || 0;
@@ -263,15 +280,11 @@
             searchFailure: searchFailureCount
           };
         });
-        console.log("mergedData:", mergedData);
 
-        // Destroy previous chart instance if exists.
         if (myChart) {
           myChart.destroy();
         }
 
-        // Convert the hour string to a Date object.
-        // Replace the space with 'T' to form an ISO string.
         const labels = mergedData.map(d => new Date(d.hour.replace(' ', 'T')));
         const successCounts = mergedData.map(d => d.success);
         const failCounts = mergedData.map(d => d.fail);
@@ -361,7 +374,7 @@
       });
     }
 
-    // Show item-level events in a table.
+    // Show item-level events.
     function showItemEvents() {
       const startDate = document.getElementById('startDate').value.trim();
       const endDate = document.getElementById('endDate').value.trim();
@@ -398,11 +411,9 @@
         });
     }
 
-    // Bind buttons to update chart and show item events.
     document.getElementById('updateChartBtn').addEventListener('click', updateChart);
     document.getElementById('showItemEventsBtn').addEventListener('click', showItemEvents);
 
-    // On DOM load, set default date range to last 7 days and load the chart.
     window.addEventListener('DOMContentLoaded', () => {
       const today = new Date();
       const past = new Date();
