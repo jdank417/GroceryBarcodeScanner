@@ -1,5 +1,5 @@
-import base64
 import io
+
 from flask import Flask, render_template, request, flash, session, redirect, url_for, Response, jsonify
 from markupsafe import Markup
 import pandas as pd
@@ -56,12 +56,11 @@ DATABASE = "metrics.db"
 def init_db():
     """
     Initialize the SQLite database.
-    WARNING: This drops the existing 'events' table if it exists.
-    Remove or modify the DROP TABLE line if you want to keep old data.
+    This function now only creates the table if it does not exist,
+    preserving existing data.
     """
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    c.execute("DROP TABLE IF EXISTS events")
     c.execute("""
         CREATE TABLE IF NOT EXISTS events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -145,7 +144,7 @@ def sanitize_sku(sku):
 def write_file(file_obj, save_path):
     """
     Write the contents of file_obj to save_path.
-    If file_obj has a 'save' method, use that; otherwise, write its value.
+    If file_obj has a 'save' method, use that; otherwise, write its contents.
     """
     if hasattr(file_obj, "save"):
         file_obj.seek(0)
@@ -455,7 +454,8 @@ def item_events():
 @app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
     """
-    Admin-protected dashboard. Displays aggregated metrics and the latest failed barcode image (if available).
+    Admin-protected dashboard. Displays aggregated metrics and a collapsible section
+    for the latest failed barcode image (if available).
     """
     if "admin" not in session:
         if request.method == "POST":
@@ -487,7 +487,7 @@ def dashboard():
         "success_rate": round(success_rate, 2)
     }
 
-    # Look for a file in the UPLOAD_FOLDER starting with "latest_failed_image"
+    # Look for the latest failed image.
     latest_failed_image = None
     latest_failed_timestamp = None
     pattern = os.path.join(UPLOAD_FOLDER, "latest_failed_image*")
