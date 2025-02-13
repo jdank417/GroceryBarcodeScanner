@@ -1,3 +1,5 @@
+import io
+
 from flask import Flask, render_template, request, flash, session, redirect, url_for, Response, jsonify
 from markupsafe import Markup
 import pandas as pd
@@ -10,6 +12,17 @@ import datetime
 from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 import re  # For SKU sanitization
 import difflib  # For fuzzy matching of UPCs
+import glob
+from werkzeug.utils import secure_filename
+
+# For potential image conversion and creating dummy images
+try:
+    from PIL import Image
+    import pillow_heif
+
+    pillow_heif.register_heif_opener()
+except ImportError:
+    Image = None
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # Use environment variables in production.
@@ -18,6 +31,12 @@ ADMIN_PASSWORD = "admin"  # Also use environment variables in production.
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Define your upload folder (inside your static folder)
+UPLOAD_FOLDER = os.path.join(app.static_folder, "uploads")
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+    app.logger.info(f"Created UPLOAD_FOLDER at {UPLOAD_FOLDER}")
 
 # Path to your Excel file
 EXCEL_FILE_PATH = 'Item Database/output.xlsx'
@@ -28,21 +47,20 @@ df["ItemNumber"] = df["ItemNumber"].str.replace(r'\.0$', '', regex=True).str.str
 lookup_success_counter = Counter("lookup_success_total", "Total successful UPC lookups")
 lookup_failure_counter = Counter("lookup_failure_total", "Total UPC lookups that did not find an item")
 barcode_scan_failure_counter = Counter("barcode_scan_failure_total", "Total barcode decode failures reported by client")
-non_numerical_value_counter = Counter("non_numerical_value_total", "Total non numerical SKU inputs that were sanitized to an empty string")
+non_numerical_value_counter = Counter("non_numerical_value_total",
+                                      "Total non numerical SKU inputs that were sanitized to an empty string")
 
 DATABASE = "metrics.db"
+
 
 def init_db():
     """
     Initialize the SQLite database.
-    WARNING: This drops the existing 'events' table if it exists.
-    Remove or modify the DROP TABLE line if you want to keep old data.
+    This function now only creates the table if it does not exist,
+    preserving existing data.
     """
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    # Drop old table -- comment out if you need to keep existing data
-    c.execute("DROP TABLE IF EXISTS events")
-    # Create new table including sku and item_name columns
     c.execute("""
         CREATE TABLE IF NOT EXISTS events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,7 +73,9 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 init_db()
+
 
 def log_event_sql(event_type, sku=None, item_name=None):
     """
@@ -69,6 +89,7 @@ def log_event_sql(event_type, sku=None, item_name=None):
     """, (event_type, int(time.time()), sku, item_name))
     conn.commit()
     conn.close()
+
 
 def get_aggregated_counts():
     """
@@ -90,6 +111,7 @@ def get_aggregated_counts():
     conn.close()
     return counts
 
+
 @lru_cache(maxsize=100)
 def lookup_item(barcode_data):
     """
@@ -102,38 +124,88 @@ def lookup_item(barcode_data):
     if not item_info.empty:
         item_name = item_info["ItemName"].values[0]
         item_price = item_info["ItemPrice"].values[0]
-        # Log successful lookup
         lookup_success_counter.inc()
         log_event_sql("lookup_success", sku=barcode_data, item_name=item_name)
         return item_name, item_price
     else:
-        # Log lookup failure
         lookup_failure_counter.inc()
         log_event_sql("lookup_failure", sku=barcode_data, item_name=None)
         return None, None
 
+
 def sanitize_sku(sku):
     """
     Sanitizes the SKU input to ensure it contains only digits and no spaces.
-    - Converts the input to a string.
-    - Strips leading/trailing whitespace.
-    - Removes all non-digit characters.
     """
-    sku = str(sku).strip()  # Remove leading/trailing whitespace
-    sanitized = re.sub(r'\D', '', sku)  # Remove any non-digit characters
-    return sanitized
+    sku = str(sku).strip()
+    return re.sub(r'\D', '', sku)
+
+
+def write_file(file_obj, save_path):
+    """
+    Write the contents of file_obj to save_path.
+    If file_obj has a 'save' method, use that; otherwise, write its contents.
+    """
+    if hasattr(file_obj, "save"):
+        file_obj.seek(0)
+        file_obj.save(save_path)
+    else:
+        with open(save_path, "wb") as f:
+            f.write(file_obj.getvalue())
+
+
+def save_failed_image(file):
+    """
+    Saves an uploaded image file as the latest failed image.
+    Removes any existing file starting with "latest_failed_image" from the UPLOAD_FOLDER.
+    Supports multiple image types (including HEIC/HEIF conversion to JPEG if possible).
+    Returns a tuple: (saved_filename, full_save_path)
+    """
+    pattern = os.path.join(UPLOAD_FOLDER, "latest_failed_image*")
+    for existing_file in glob.glob(pattern):
+        os.remove(existing_file)
+        app.logger.info(f"Removed existing failed image: {existing_file}")
+
+    original_filename = secure_filename(file.filename)
+    _, ext = os.path.splitext(original_filename)
+    ext = ext.lower() if ext else ".jpg"
+    app.logger.info(f"Original filename: {original_filename}, extension: {ext}")
+
+    saved_filename = None
+    save_path = None
+
+    if ext in [".heic", ".heif"] and Image is not None:
+        try:
+            image = Image.open(file)
+            saved_filename = "latest_failed_image.jpg"
+            save_path = os.path.join(UPLOAD_FOLDER, saved_filename)
+            image.save(save_path, "JPEG")
+            app.logger.info(f"Converted HEIC image and saved to {save_path}")
+        except Exception as e:
+            app.logger.error(f"HEIC conversion failed: {e}. Saving original file.")
+            saved_filename = "latest_failed_image" + ext
+            save_path = os.path.join(UPLOAD_FOLDER, saved_filename)
+            file.seek(0)
+            write_file(file, save_path)
+    else:
+        saved_filename = "latest_failed_image" + ext
+        save_path = os.path.join(UPLOAD_FOLDER, saved_filename)
+        file.seek(0)
+        write_file(file, save_path)
+        app.logger.info(f"Saved failed image to {save_path}")
+
+    return saved_filename, save_path
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     """
     Main page for manual barcode lookups and product name searches.
-    For UPC searches, if no exact match is found, returns 5 similar UPC suggestions.
     """
     if request.method == "POST":
         query = request.form.get("barcode_id")
         if query:
             query = query.strip()
-            # Check if the query is all digits (UPC search)
             if query.isdigit():
                 sanitized_barcode = sanitize_sku(query)
                 if not sanitized_barcode:
@@ -141,12 +213,10 @@ def index():
                     log_event_sql("non_numerical_value", sku=query, item_name="Non numerical value")
                     flash("Non numerical SKU input provided.", "error")
                     return render_template("index.html")
-                # Attempt to look up the UPC
                 item_name, item_price = lookup_item(sanitized_barcode)
                 if item_name and item_price:
                     flash(f"Item: {item_name}, Price: ${item_price}", "info")
                 else:
-                    # If no exact match, suggest 5 similar UPC's from the database.
                     possible_upcs = df["ItemNumber"].tolist()
                     suggestions = difflib.get_close_matches(sanitized_barcode, possible_upcs, n=5, cutoff=0.6)
                     if suggestions:
@@ -159,7 +229,6 @@ def index():
                     else:
                         flash("Item not found in the Excel file.", "warning")
             else:
-                # Treat as product name search
                 matches = df[df["ItemName"].str.contains(query, case=False, na=False)]
                 if not matches.empty:
                     top_matches = matches.head(5)
@@ -167,7 +236,8 @@ def index():
                     results_list = []
                     for _, row in top_matches.iterrows():
                         results_html += f"<li>{row['ItemName']} (UPC: {row['ItemNumber']}) - Price: ${row['ItemPrice']}</li>"
-                        results_list.append(f"{row['ItemName']} (UPC: {row['ItemNumber']}) - Price: ${row['ItemPrice']}")
+                        results_list.append(
+                            f"{row['ItemName']} (UPC: {row['ItemNumber']}) - Price: ${row['ItemPrice']}")
                     results_html += "</ul>"
                     results_summary = "; ".join(results_list)
                     log_event_sql("search_product_success", sku=query, item_name=results_summary)
@@ -179,12 +249,78 @@ def index():
             flash("Please enter a valid UPC or product name.", "error")
     return render_template("index.html")
 
+
+@app.route("/process_barcode_image", methods=["POST"])
+def process_barcode_image():
+    """
+    Endpoint to process an uploaded barcode image.
+    If barcode detection fails, the image is saved and replaces any previously stored image.
+    """
+    if 'barcode_image' not in request.files:
+        flash("No file part in the request.", "error")
+        return redirect(url_for("index"))
+    file = request.files['barcode_image']
+    if file.filename == "":
+        flash("No file selected.", "error")
+        return redirect(url_for("index"))
+    if not file.content_type.startswith("image/"):
+        flash("Uploaded file is not an image.", "error")
+        return redirect(url_for("index"))
+
+    saved_filename, save_path = save_failed_image(file)
+    file.seek(0)
+    barcode_found = process_barcode_image(file)
+    if not barcode_found:
+        if os.path.exists(save_path):
+            file_size = os.path.getsize(save_path)
+            app.logger.info(f"Confirmed saved failed image at {save_path} ({file_size} bytes)")
+        else:
+            app.logger.error("Failed to save the failed image!")
+        flash("Barcode not detected. Latest failed image saved for debugging.", "error")
+    else:
+        flash("Barcode detected successfully!", "success")
+    return redirect(url_for("dashboard"))
+
+
 @app.route("/log_client_error", methods=["POST"])
 def log_client_error():
     """
     Log client errors such as barcode scan failures.
+    If a file is included in the request (multipart/form-data), save it as the latest failed image.
+    If no file is provided, create a dummy image so that the failed image is updated.
     """
-    data = request.get_json()
+    if 'barcode_image' in request.files:
+        file = request.files['barcode_image']
+        saved_filename, save_path = save_failed_image(file)
+        if os.path.exists(save_path):
+            file_size = os.path.getsize(save_path)
+            app.logger.info(f"Saved failed image from log_client_error to {save_path} ({file_size} bytes)")
+        else:
+            app.logger.error("Failed to save the failed image from log_client_error!")
+    else:
+        # No file provided; create a dummy image.
+        if Image is not None:
+            try:
+                dummy_image = Image.new("RGB", (300, 300), color=(255, 0, 0))
+                dummy_file = io.BytesIO()
+                dummy_image.save(dummy_file, "JPEG")
+                dummy_file.seek(0)
+                dummy_file.filename = "dummy_failed_image.jpg"
+                dummy_file.content_type = "image/jpeg"
+                saved_filename, save_path = save_failed_image(dummy_file)
+                if os.path.exists(save_path):
+                    file_size = os.path.getsize(save_path)
+                    app.logger.info(f"Created dummy failed image for testing at {save_path} ({file_size} bytes)")
+                else:
+                    app.logger.error("Failed to create dummy failed image!")
+            except Exception as e:
+                app.logger.error(f"Error creating dummy image: {e}")
+        else:
+            app.logger.error("Pillow not available to create dummy image")
+
+    data = request.get_json(silent=True)
+    if data is None:
+        data = {}
     error = data.get("error", "No error provided")
     details = data.get("details", "")
     sku = data.get("sku", None)
@@ -192,8 +328,9 @@ def log_client_error():
     barcode_scan_failure_counter.inc()
     log_event_sql("barcode_scan_failure", sku=sku, item_name=details)
 
-    logger.error(f"Client error: {error} – {details}")
+    app.logger.error(f"Client error: {error} – {details}")
     return jsonify({"status": "logged"}), 200
+
 
 @app.route("/metrics")
 def metrics():
@@ -202,12 +339,12 @@ def metrics():
     """
     return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
 
+
 @app.route("/api/historical")
 def historical_data():
     """
     Returns aggregated counts for a given event type, grouped by hour,
     within an optional start/end date range (default last 7 days).
-    Expected format: an array of objects with keys "hour" and "count".
     """
     event_type = request.args.get("event_type")
     if not event_type:
@@ -262,6 +399,7 @@ def historical_data():
     aggregated = aggregate_events(filtered)
     return jsonify(aggregated)
 
+
 @app.route("/api/item_events", endpoint="item_events")
 def item_events():
     """
@@ -312,12 +450,12 @@ def item_events():
         })
     return jsonify(events)
 
+
 @app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
     """
-    Admin-protected dashboard. Shows aggregated metrics and a chart of hourly data for each event type + item-level events.
-    The Successful Lookups count is a combination of lookup_success and search_product_success,
-    and the Lookup Failures count is a combination of lookup_failure and search_product_failure.
+    Admin-protected dashboard. Displays aggregated metrics and a collapsible section
+    for the latest failed barcode image (if available).
     """
     if "admin" not in session:
         if request.method == "POST":
@@ -348,7 +486,25 @@ def dashboard():
         "barcode_scan_failure_total": barcode_failure_count,
         "success_rate": round(success_rate, 2)
     }
-    return render_template("dashboard.html", metrics=metrics_data)
+
+    # Look for the latest failed image.
+    latest_failed_image = None
+    latest_failed_timestamp = None
+    pattern = os.path.join(UPLOAD_FOLDER, "latest_failed_image*")
+    files = glob.glob(pattern)
+    app.logger.info(f"Dashboard lookup: searching for files with pattern {pattern}. Found: {files}")
+    if files:
+        file_path = files[0]
+        latest_failed_image = os.path.basename(file_path)
+        mtime = os.path.getmtime(file_path)
+        latest_failed_timestamp = datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        app.logger.info("No latest failed image file found in uploads folder.")
+
+    return render_template("dashboard.html", metrics=metrics_data,
+                           latest_failed_image=latest_failed_image,
+                           latest_failed_timestamp=latest_failed_timestamp)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)

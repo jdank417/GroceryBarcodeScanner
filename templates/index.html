@@ -1,478 +1,469 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <title>Barcode Scanner</title>
-    <!-- Icon -->
-    <link rel="icon" href="../static/uploads/favicon_main.png" sizes="32x32" type="image/png">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Bootstrap CSS -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- QuaggaJS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-    <!-- Custom CSS -->
-    <style>
-        :root {
-            --bg-color: #f8f9fa;
-            --text-color: #343a40;
-            --accent-color: #FFD700;
-            --header-bg: #000;
-            --header-text: #FFD700;
-            --card-bg: rgba(255, 255, 255, 0.9);
-        }
-
-        [data-theme="dark"] {
-            --bg-color: #343a40;
-            --text-color: #f8f9fa;
-            --accent-color: #FFD700;
-            --header-bg: #222;
-            --header-text: #FFD700;
-            --card-bg: rgba(0, 0, 0, 0.8);
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            background-image: url('../static/uploads/168227_hero.jpg');
-            background-size: cover;
-            background-position: center;
-            /* Using blend mode to darken slightly by default */
-            background-blend-mode: darken;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        /* Dark mode overlay */
-        [data-theme="dark"] body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        header {
-            background-color: var(--header-bg);
-            color: var(--header-text);
-            border-bottom: 3px solid var(--accent-color);
-            position: relative;
-            z-index: 1;
-        }
-
-        header .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        header nav ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            gap: 20px;
-        }
-
-        header nav ul li a {
-            color: var(--header-text);
-            text-decoration: none;
-            font-weight: bold;
-            transition: color 0.6s ease, background-color 0.6s ease;
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-
-        header nav ul li a:hover {
-            color: var(--header-bg);
-            background-color: var(--accent-color);
-        }
-
-        .theme-toggle button {
-            background: none;
-            border: none;
-            color: var(--header-text);
-            font-weight: bold;
-            cursor: pointer;
-            outline: none;
-        }
-
-        main {
-            flex: 1;
-            padding: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Logo Container */
-        .logo-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px 0;
-        }
-
-        .logo-img {
-            width: 250px;
-            height: auto;
-        }
-
-        @media (min-width: 768px) {
-            .logo-img {
-                width: 375px;
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .logo-img {
-                width: 500px;
-            }
-        }
-
-        /* Section Cards */
-        .section-card {
-            background-color: var(--card-bg);
-            border-top: 5px solid var(--accent-color);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .section-card h2 {
-            color: #800000;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .section-card p {
-            font-size: 18px;
-            line-height: 1.6;
-        }
-
-        /* Upload & Results Buttons */
-        .btn-custom {
-            background-color: var(--accent-color);
-            color: var(--text-color);
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 16px;
-            font-family: "Times New Roman", serif;
-            transition: background-color 0.3s ease;
-        }
-
-        .btn-custom:hover {
-            background-color: #e6c200;
-        }
-
-        /* GitHub Button styled like code */
-        .btn-code {
-            background-color: #2d2d2d;
-            color: #f8f8f2;
-            font-family: 'Source Code Pro', monospace;
-            font-size: 14px;
-            padding: 10px 20px;
-            border: 1px solid #444;
-            border-radius: 4px;
-            text-decoration: none;
-            display: inline-block;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-
-        .btn-code:hover {
-            background-color: #3a3a3a;
-            transform: translateY(-2px);
-        }
-
-        /* Result Box */
-        .result-box {
-            background-color: #fff;
-            border: 2px solid var(--accent-color);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-            max-width: 500px;
-            margin: 20px auto;
-            text-align: center;
-            animation: popIn 0.6s ease-out;
-        }
-
-        .result-box h3 {
-            margin-bottom: 10px;
-            font-size: 24px;
-            color: #800000;
-        }
-
-        .result-box p {
-            font-size: 17px;
-            color: #333;
-            font-family: "Times New Roman", serif;
-        }
-
-        @keyframes popIn {
-            0% {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        footer {
-            background-color: var(--header-bg);
-            color: var(--text-color);
-            text-align: center;
-            padding: 10px 0;
-            border-top: 3px solid var(--accent-color);
-            position: relative;
-            z-index: 1;
-        }
-
-        footer a {
-            color: #ff4500;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
-    <!-- Optional: Include a code font -->
-    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>Barcode Scanner</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- QuaggaJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+  <!-- Custom CSS -->
+  <style>
+    :root {
+      --bg-color: #f8f9fa;
+      --text-color: #343a40;
+      --accent-color: #FFD700;
+      --header-bg: #000;
+      --header-text: #FFD700;
+      --card-bg: rgba(255, 255, 255, 0.9);
+    }
+    [data-theme="dark"] {
+      --bg-color: #343a40;
+      --text-color: #f8f9fa;
+      --accent-color: #FFD700;
+      --header-bg: #222;
+      --header-text: #FFD700;
+      --card-bg: rgba(0, 0, 0, 0.8);
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      background-image: url('../static/uploads/IMG_7383.jpg');
+      background-size: cover;
+      background-position: center;
+      background-blend-mode: darken;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    /* Dark mode overlay */
+    [data-theme="dark"] body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 0;
+      pointer-events: none;
+    }
+    header {
+      background-color: var(--header-bg);
+      color: var(--header-text);
+      border-bottom: 3px solid var(--accent-color);
+      position: relative;
+      z-index: 1;
+    }
+    header .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    header nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      gap: 20px;
+    }
+    header nav ul li a {
+      color: var(--header-text);
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.6s ease, background-color 0.6s ease;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    header nav ul li a:hover {
+      color: var(--header-bg);
+      background-color: var(--accent-color);
+    }
+    .theme-toggle button {
+      background: none;
+      border: none;
+      color: var(--header-text);
+      font-weight: bold;
+      cursor: pointer;
+      outline: none;
+    }
+    main {
+      flex: 1;
+      padding: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    /* Logo Container */
+    .logo-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 0;
+    }
+    .logo-img {
+      width: 250px;
+      height: auto;
+    }
+    @media (min-width: 768px) {
+      .logo-img {
+        width: 375px;
+      }
+    }
+    @media (min-width: 1024px) {
+      .logo-img {
+        width: 500px;
+      }
+    }
+    /* Section Cards */
+    .section-card {
+      background-color: var(--card-bg);
+      border-top: 5px solid var(--accent-color);
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+      position: relative;
+      z-index: 1;
+    }
+    .section-card h2 {
+      color: #800000;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .section-card p {
+      font-size: 18px;
+      line-height: 1.6;
+    }
+    /* Upload & Results Buttons */
+    .btn-custom {
+      background-color: var(--accent-color);
+      color: var(--text-color);
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 16px;
+      font-family: "Times New Roman", serif;
+      transition: background-color 0.3s ease;
+    }
+    .btn-custom:hover {
+      background-color: #e6c200;
+    }
+    /* GitHub Button styled like code */
+    .btn-code {
+      background-color: #2d2d2d;
+      color: #f8f8f2;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 14px;
+      padding: 10px 20px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      text-decoration: none;
+      display: inline-block;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .btn-code:hover {
+      background-color: #3a3a3a;
+      transform: translateY(-2px);
+    }
+    /* Result Box */
+    .result-box {
+      background-color: #fff;
+      border: 2px solid var(--accent-color);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+      max-width: 500px;
+      margin: 20px auto;
+      text-align: center;
+      animation: popIn 0.6s ease-out;
+    }
+    .result-box h3 {
+      margin-bottom: 10px;
+      font-size: 24px;
+      color: #800000;
+    }
+    .result-box p {
+      font-size: 17px;
+      color: #333;
+      font-family: "Times New Roman", serif;
+    }
+    @keyframes popIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    footer {
+      background-color: var(--header-bg);
+      color: var(--text-color);
+      text-align: center;
+      padding: 10px 0;
+      border-top: 3px solid var(--accent-color);
+      position: relative;
+      z-index: 1;
+    }
+    footer a {
+      color: #ff4500;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+  <!-- Optional: Include a code font -->
+  <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet">
 </head>
 <body>
-<!-- Header -->
-<header class="py-3">
+  <!-- Header -->
+  <header class="py-3">
     <div class="container d-flex justify-content-between align-items-center">
-        <div class="logo">
-            <div>Wentworth</div>
-            <small>Institute of Technology</small>
-        </div>
-        <nav>
-            <ul class="d-flex">
-                <li><a href="#home" class="mr-3">Home</a></li>
-                <li><a href="#about" class="mr-3">About</a></li>
-                <li><a href="#contact" class="mr-3">Contact</a></li>
-                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-            </ul>
-        </nav>
-        <div class="theme-toggle">
-            <button id="themeToggle">Switch to Dark Mode</button>
-        </div>
+      <div class="logo">
+        <div>Wentworth</div>
+        <small>Institute of Technology</small>
+      </div>
+      <nav>
+        <ul class="d-flex">
+          <li><a href="#home" class="mr-3">Home</a></li>
+          <li><a href="#about" class="mr-3">About</a></li>
+          <li><a href="#contact" class="mr-3">Contact</a></li>
+          <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        </ul>
+      </nav>
+      <div class="theme-toggle">
+        <button id="themeToggle">Switch to Dark Mode</button>
+      </div>
     </div>
-</header>
+  </header>
 
-<!-- Main Content -->
-<main id="home">
+  <!-- Main Content -->
+  <main id="home">
     <div class="container">
-        <!-- Logo Image -->
-        <div class="logo-container">
-            <img src="../static/uploads/BAC_Logo_tr.png" alt="Logo" class="logo-img">
+      <!-- Logo Image -->
+      <div class="logo-container">
+        <img src="../static/uploads/BAC_Logo_tr.png" alt="Logo" class="logo-img">
+      </div>
+
+      <!-- Upload / Scan Section -->
+      <section class="section-card">
+        <p class="text-center text-muted" style="font-size: 16px;">
+          You can either Search Item Name, enter the UPC manually, or scan the barcode using your camera.
+        </p>
+        <div class="row">
+          <!-- Manual Entry Column -->
+          <div class="col-md-6">
+            <form id="barcodeForm" method="post" enctype="multipart/form-data">
+              <div class="form-group">
+                <label for="barcode-id" class="font-weight-bold">Search Item Name or Enter Barcode ID:</label>
+                <input type="text" name="barcode_id" id="barcode-id" class="form-control" placeholder="Search Item Name or Enter UPC here" maxlength="20" required>
+              </div>
+              <button type="submit" class="btn btn-custom">Submit</button>
+            </form>
+          </div>
+          <!-- Camera Scan Column -->
+          <div class="col-md-6 text-center">
+            <p class="text-muted">Or scan your barcode with your camera</p>
+            <button type="button" class="btn btn-custom" onclick="openNativeCamera()">
+              <i class="fas fa-camera"></i> Scan Barcode Using Camera
+            </button>
+            <!-- Hidden file input for native camera capture -->
+            <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
+          </div>
         </div>
+        <!-- Feedback element for scan errors -->
+        <div id="scan-feedback" class="alert alert-warning mt-3" style="display:none;">
+          No barcode detected. Please try again or ensure the barcode is clearly visible.
+        </div>
+      </section>
 
-        <!-- Upload / Scan Section -->
-        <section class="section-card">
-            <p class="text-center text-muted" style="font-size: 16px;">
-                You can either enter the UPC manually or scan the barcode using your camera.
-            </p>
-            <div class="row">
-                <!-- Manual Entry Column -->
-                <div class="col-md-6">
-                    <form id="barcodeForm" method="post" enctype="multipart/form-data">
-                        <div class="form-group">
-                            <label for="barcode-id" class="font-weight-bold">Enter Barcode ID:</label>
-                            <input type="text" name="barcode_id" id="barcode-id" class="form-control"
-                                   placeholder="Enter UPC here" maxlength="20" required>
-                        </div>
-                        <button type="submit" class="btn btn-custom">Submit</button>
-                    </form>
-                </div>
-                <!-- Camera Scan Column -->
-                <div class="col-md-6 text-center">
-                    <p class="text-muted">Or scan your barcode with your camera</p>
-                    <button type="button" class="btn btn-custom" onclick="openNativeCamera()">
-                        <i class="fas fa-camera"></i> Scan Barcode Using Camera
-                    </button>
-                    <!-- Hidden file input for native camera capture -->
-                    <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
-                </div>
-            </div>
-            <!-- Feedback element for scan errors -->
-            <div id="scan-feedback" class="alert alert-warning mt-3" style="display:none;">
-                No barcode detected. Please try again or ensure the barcode is clearly visible.
-            </div>
-        </section>
-
-        <!-- Results Section -->
-        <section class="section-card">
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
+      <!-- Results Section -->
+      <section class="section-card">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
             <div class="alert alert-info alert-dismissible fade show" role="alert">
-                {% for message in messages %}
-                <p class="mb-0">{{ message }}</p>
-                {% endfor %}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+              {% for message in messages %}
+                <p class="mb-0">{{ message|safe }}</p>
+              {% endfor %}
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
             </div>
-            {% endif %}
-            {% endwith %}
-        </section>
+          {% endif %}
+        {% endwith %}
+      </section>
 
-        <!-- About Section -->
-        <section id="about" class="section-card">
-            <h2>About Our App</h2>
-            <p>
-                Our barcode scanner app is an innovative solution developed by the Business Affairs Committee of the
-                Wentworth Student Government. Designed specifically for college students, it offers a quick and reliable
-                way to navigate Tessie’s market—empowering you to check product prices at a glance.
-            </p>
-            <p>
-                Built with Python, JavaScript, and HTML, the app combines state-of-the-art scanning technology with a
-                user-friendly interface to ensure smooth and accurate performance. Our passionate team created this tool
-                to meet the everyday needs of students, making your shopping experience more convenient.
-            </p>
-            <p>
-                Interested in how we built it, or want to collaborate on the project? Check out our GitHub!
-            </p>
-            <div class="text-center mt-3">
-                <!-- GitHub Button styled as code -->
-                <a href="https://github.com/jdank417/GroceryBarcodeScanner" target="_blank" class="btn-code">git clone
-                    https://github.com/jdank417/GroceryBarcodeScanner.git</a>
-            </div>
-        </section>
+      <!-- About Section -->
+      <section id="about" class="section-card">
+        <h2>About Our App</h2>
+        <p>
+          Our barcode scanner app is an innovative solution developed by the Business Affairs Committee of the Wentworth Student Government. Designed specifically for college students, it offers a quick and reliable way to navigate Tessie’s market—empowering you to check product prices at a glance.
+        </p>
+        <p>
+          Built with Python, JavaScript, and HTML, the app combines state-of-the-art scanning technology with a user-friendly interface to ensure smooth and accurate performance. Our passionate team created this tool to meet the everyday needs of students, making your shopping experience more convenient.
+        </p>
+        <p>
+          Interested in how we built it, or want to collaborate on the project? Check out our GitHub!
+        </p>
+        <div class="text-center mt-3">
+          <!-- GitHub Button styled as code -->
+          <a href="https://github.com/jdank417/GroceryBarcodeScanner" target="_blank" class="btn-code">git clone https://github.com/jdank417/GroceryBarcodeScanner.git</a>
+        </div>
+      </section>
 
-        <!-- Contact Section -->
-        <section id="contact" class="section-card">
-            <h2>Contact Us</h2>
-            <ul class="list-unstyled" style="font-size: 20px; font-family: 'Times New Roman', serif;">
-                <li>Jason Dank (PM/Fullstack): <a href="mailto:dankj@wit.edu">dankj@wit.edu</a></li>
-                <li>Aliya Vagapova (UI/UX): <a href="mailto:vagapovaa@wit.edu">vagapovaa@wit.edu</a></li>
-                <li>WSG: <a href="mailto:wsg@wit.edu">wsg@wit.edu</a></li>
-            </ul>
-        </section>
+      <!-- Contact Section -->
+      <section id="contact" class="section-card">
+        <h2>Contact Us</h2>
+        <ul class="list-unstyled" style="font-size: 20px; font-family: 'Times New Roman', serif;">
+          <li>Jason Dank (PM/Fullstack): <a href="mailto:dankj@wit.edu">dankj@wit.edu</a></li>
+          <li>Aliya Vagapova (UI/UX): <a href="mailto:vagapovaa@wit.edu">vagapovaa@wit.edu</a></li>
+          <li>WSG: <a href="mailto:wsg@wit.edu">wsg@wit.edu</a></li>
+        </ul>
+      </section>
     </div>
-</main>
+  </main>
 
-<!-- Footer -->
-<footer>
+  <!-- Footer -->
+  <footer>
     <div class="container">
-        <p class="mb-0">&copy; 2025 Wentworth Institute of Technology. All Rights Reserved.</p>
+      <p class="mb-0">&copy; 2025 Wentworth Institute of Technology. All Rights Reserved.</p>
     </div>
-</footer>
+  </footer>
 
-<!-- JavaScript (jQuery, Popper, Bootstrap) -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<!-- Custom JavaScript -->
-<script>
+  <!-- Modal Notification (Intrusive) -->
+  <div class="modal fade" id="notificationModal" tabindex="-1" role="dialog" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="notificationModalLabel">Important Update</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          You can now search by product name in the search box! Try entering part of a product name.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal">Got it!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Dependencies: jQuery, Popper, Bootstrap -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <!-- Custom JavaScript -->
+  <script>
     // Dark mode toggle functionality
-    document.getElementById('themeToggle').addEventListener('click', function () {
-        const htmlEl = document.documentElement;
-        if (htmlEl.getAttribute('data-theme') === 'light') {
-            htmlEl.setAttribute('data-theme', 'dark');
-            this.textContent = "Switch to Light Mode";
-        } else {
-            htmlEl.setAttribute('data-theme', 'light');
-            this.textContent = "Switch to Dark Mode";
-        }
+    document.getElementById('themeToggle').addEventListener('click', function() {
+      const htmlEl = document.documentElement;
+      if (htmlEl.getAttribute('data-theme') === 'light') {
+        htmlEl.setAttribute('data-theme', 'dark');
+        this.textContent = "Switch to Light Mode";
+      } else {
+        htmlEl.setAttribute('data-theme', 'light');
+        this.textContent = "Switch to Dark Mode";
+      }
     });
 
     console.log("Barcode scanner script loaded.");
 
     // Open the native camera/file picker
     function openNativeCamera() {
-        document.getElementById("native-camera-input").click();
+      document.getElementById("native-camera-input").click();
     }
 
     // Listen for changes on the hidden file input (i.e., when a picture is taken)
     document.getElementById("native-camera-input").addEventListener("change", function (e) {
-        if (e.target.files && e.target.files[0]) {
-            var file = e.target.files[0];
-            var reader = new FileReader();
-            reader.onload = function (evt) {
-                var dataURL = evt.target.result;
-                console.log("Image captured, attempting to decode barcode.");
-                // Pass the captured image to Quagga for decoding
-                decodeBarcode(dataURL);
-            };
-            reader.readAsDataURL(file);
-        }
+      if (e.target.files && e.target.files[0]) {
+        var file = e.target.files[0];
+        var reader = new FileReader();
+        reader.onload = function (evt) {
+          var dataURL = evt.target.result;
+          console.log("Image captured, attempting to decode barcode.");
+          // Pass the captured image to Quagga for decoding
+          decodeBarcode(dataURL);
+        };
+        reader.readAsDataURL(file);
+      }
     });
 
     // Define the error reporting function
     function reportClientError(errorMessage, details) {
-        console.log("Reporting client error:", errorMessage, details);
-        fetch('/log_client_error', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({error: errorMessage, details: details})
-        })
-            .then(response => response.json())
-            .then(data => console.log('Error reported successfully:', data))
-            .catch(err => console.error('Error reporting failed:', err));
+      console.log("Reporting client error:", errorMessage, details);
+      fetch('/log_client_error', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ error: errorMessage, details: details })
+      })
+      .then(response => response.json())
+      .then(data => console.log('Error reported successfully:', data))
+      .catch(err => console.error('Error reporting failed:', err));
     }
 
     // Barcode decode function with auto-submit functionality.
     function decodeBarcode(dataURL) {
-        Quagga.decodeSingle({
-            src: dataURL,
-            numOfWorkers: 0,
-            decoder: {
-                readers: [
-                    "code_128_reader",
-                    "ean_reader",
-                    "ean_8_reader",
-                    "code_39_reader",
-                    "upc_reader"
-                ]
-            }
-        }, function (result) {
-            if (result && result.codeResult) {
-                var code = result.codeResult.code;
-                if (code.length === 13 && code.charAt(0) === '0') {
-                    code = code.slice(1);
-                }
-                var barcodeInput = document.getElementById('barcode-id');
-                barcodeInput.value = code;
-                console.log("Barcode detected:", code);
-                // Auto-submit the form after a successful scan
-                document.getElementById('barcodeForm').submit();
-            } else {
-                console.log("No barcode detected in the image. Triggering error reporting.");
-                // Show the inline error message
-                var feedbackEl = document.getElementById('scan-feedback');
-                feedbackEl.style.display = 'block';
-                setTimeout(function () {
-                    feedbackEl.style.display = 'none';
-                }, 3000);
-                reportClientError("Barcode not detected", "The uploaded image did not contain a readable barcode.");
-            }
-        });
+      Quagga.decodeSingle({
+          src: dataURL,
+          numOfWorkers: 0,
+          decoder: {
+              readers: [
+                  "code_128_reader",
+                  "ean_reader",
+                  "ean_8_reader",
+                  "code_39_reader",
+                  "upc_reader"
+              ]
+          }
+      }, function (result) {
+          if (result && result.codeResult) {
+              var code = result.codeResult.code;
+              if (code.length === 13 && code.charAt(0) === '0') {
+                  code = code.slice(1);
+              }
+              var barcodeInput = document.getElementById('barcode-id');
+              barcodeInput.value = code;
+              console.log("Barcode detected:", code);
+              // Auto-submit the form after a successful scan
+              document.getElementById('barcodeForm').submit();
+          } else {
+              console.log("No barcode detected in the image. Triggering error reporting.");
+              // Show the inline error message
+              var feedbackEl = document.getElementById('scan-feedback');
+              feedbackEl.style.display = 'block';
+              setTimeout(function() {
+                feedbackEl.style.display = 'none';
+              }, 3000);
+              reportClientError("Barcode not detected", "The uploaded image did not contain a readable barcode.");
+          }
+      });
     }
-</script>
+
+    // Show the modal notification only on initial load using localStorage
+    $(document).ready(function() {
+      if (!localStorage.getItem('notificationModalShown')) {
+        $('#notificationModal').modal('show');
+        localStorage.setItem('notificationModalShown', 'true');
+      }
+    });
+  </script>
 </body>
 </html>
