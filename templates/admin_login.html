@@ -17,26 +17,22 @@
             --card-bg: #fff;
             --card-border: #dee2e6;
         }
-
         [data-theme="dark"] {
             --bg-color: #343a40;
             --text-color: #f8f9fa;
             --card-bg: #495057;
             --card-border: #6c757d;
         }
-
         body {
             font-family: 'Roboto', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 40px;
         }
-
         .container {
             max-width: 400px;
             margin: auto;
         }
-
         .toggle-theme {
             cursor: pointer;
             font-size: 0.9rem;
@@ -45,54 +41,65 @@
             color: var(--text-color);
         }
     </style>
+    <!-- Script to persist dark mode -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            const toggleButton = document.getElementById('themeToggle');
+            if (toggleButton) {
+                toggleButton.textContent = currentTheme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode";
+            }
+        });
+    </script>
 </head>
 <body>
-<!-- Dark Mode Toggle -->
-<div class="d-flex justify-content-end mb-3">
-    <button class="toggle-theme" id="themeToggle">Switch to Dark Mode</button>
-</div>
-
-<div class="container">
-    <div class="card">
-        <div class="card-body">
-            <h2 class="card-title text-center mb-4">Admin Login</h2>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-            <div class="alert alert-danger" role="alert">
-                {% for category, message in messages %}
-                <p class="mb-0">{{ message }}</p>
-                {% endfor %}
+    <!-- Dark Mode Toggle -->
+    <div class="d-flex justify-content-end mb-3">
+        <button class="toggle-theme" id="themeToggle">Switch to Dark Mode</button>
+    </div>
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Admin Login</h2>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="alert alert-danger" role="alert">
+                    {% for category, message in messages %}
+                    <p class="mb-0">{{ message }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+                <form method="post">
+                    <div class="form-group">
+                        <input type="password" class="form-control" name="password" placeholder="Password" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="submit" class="btn btn-primary btn-block" value="Login">
+                    </div>
+                </form>
             </div>
-            {% endif %}
-            {% endwith %}
-            <form method="post">
-                <div class="form-group">
-                    <input type="password" class="form-control" name="password" placeholder="Password" required>
-                </div>
-                <div class="form-group">
-                    <input type="submit" class="btn btn-primary btn-block" value="Login">
-                </div>
-            </form>
         </div>
     </div>
-</div>
-
-<!-- Bootstrap JS, Popper.js, and jQuery -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<script>
-    // Dark mode toggle functionality
-    document.getElementById('themeToggle').addEventListener('click', function () {
-        const htmlEl = document.documentElement;
-        if (htmlEl.getAttribute('data-theme') === 'light') {
-            htmlEl.setAttribute('data-theme', 'dark');
-            this.textContent = "Switch to Light Mode";
-        } else {
-            htmlEl.setAttribute('data-theme', 'light');
-            this.textContent = "Switch to Dark Mode";
-        }
-    });
-</script>
+    <!-- Bootstrap JS, Popper.js, and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Dark mode toggle functionality with persistence.
+        document.getElementById('themeToggle').addEventListener('click', function () {
+            const htmlEl = document.documentElement;
+            if (htmlEl.getAttribute('data-theme') === 'light') {
+                htmlEl.setAttribute('data-theme', 'dark');
+                this.textContent = "Switch to Light Mode";
+                localStorage.setItem('theme', 'dark');
+            } else {
+                htmlEl.setAttribute('data-theme', 'light');
+                this.textContent = "Switch to Dark Mode";
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    </script>
 </body>
 </html>

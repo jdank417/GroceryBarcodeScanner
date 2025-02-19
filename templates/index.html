@@ -157,9 +157,9 @@
         }
 
         [data-theme="dark"] .section-card {
-            background-color: rgba(0, 0, 0, 0.5); /* 50% opacity */
+            background-color: rgba(0, 0, 0, 0.5);
             border-top: 5px solid var(--accent-color);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Darker shadow for better contrast */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
         .section-card h2 {
@@ -229,9 +229,9 @@
         }
 
         [data-theme="dark"] .result-box {
-            background-color: rgba(255, 255, 255, 0.8); /* 80% opacity */
+            background-color: rgba(255, 255, 255, 0.8);
             border: 2px solid var(--accent-color);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.6); /* Darker shadow for better contrast */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.6);
         }
 
         .result-box h3 {
@@ -289,281 +289,255 @@
     </style>
     <!-- Optional: Include a code font -->
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet">
+    <!-- Script to persist dark mode -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            const toggleButton = document.getElementById('themeToggle');
+            if (toggleButton) {
+                toggleButton.textContent = currentTheme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode";
+            }
+        });
+    </script>
 </head>
 <body>
-<!-- Header -->
-<header class="py-3">
-    <div class="container d-flex justify-content-between align-items-center">
-        <div class="logo">
-            <div>Wentworth</div>
-            <small>Institute of Technology</small>
+    <!-- Header -->
+    <header class="py-3">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="logo">
+                <div>Wentworth</div>
+                <small>Institute of Technology</small>
+            </div>
+            <nav>
+                <ul class="d-flex">
+                    <li><a href="#home" class="mr-3">Home</a></li>
+                    <li><a href="#about" class="mr-3">About</a></li>
+                    <li><a href="#contact" class="mr-3">Contact</a></li>
+                    <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                </ul>
+            </nav>
+            <div class="theme-toggle">
+                <button id="themeToggle">Switch to Dark Mode</button>
+            </div>
         </div>
-        <nav>
-            <ul class="d-flex">
-                <li><a href="#home" class="mr-3">Home</a></li>
-                <li><a href="#about" class="mr-3">About</a></li>
-                <li><a href="#contact" class="mr-3">Contact</a></li>
-                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-            </ul>
-        </nav>
-        <div class="theme-toggle">
-            <button id="themeToggle">Switch to Dark Mode</button>
-        </div>
-    </div>
-</header>
+    </header>
 
-<!-- Main Content -->
-<main id="home">
-    <div class="container">
-        <!-- Logo Image -->
-        <div class="logo-container">
-            <img src="../static/uploads/BAC_Logo_tr.png" alt="Logo" class="logo-img">
-        </div>
+    <!-- Main Content -->
+    <main id="home">
+        <div class="container">
+            <!-- Logo Image -->
+            <div class="logo-container">
+                <img src="../static/uploads/BAC_Logo_tr.png" alt="Logo" class="logo-img">
+            </div>
 
-        <!-- Upload / Scan Section -->
-        <section class="section-card">
-            <p class="text-center text-muted" style="font-size: 16px;">
-                You can either Search Item Name, enter the UPC manually, or scan the barcode using your camera.
-            </p>
-            <div class="row">
-                <!-- Manual Entry Column -->
-                <div class="col-md-6">
-                    <form id="barcodeForm" method="post" enctype="multipart/form-data">
-                        <div class="form-group">
-                            <label for="barcode-id" class="font-weight-bold">Search Item Name or Enter Barcode
-                                ID:</label>
-                            <input type="text" name="barcode_id" id="barcode-id" class="form-control"
-                                   placeholder="Search Item Name or Enter UPC here" maxlength="20" required>
-                        </div>
-                        <button type="submit" class="btn btn-custom">Submit</button>
-                    </form>
+            <!-- Upload / Scan Section -->
+            <section class="section-card">
+                <p class="text-center text-muted" style="font-size: 16px;">
+                    You can either Search Item Name, enter the UPC manually, or scan the barcode using your camera.
+                </p>
+                <div class="row">
+                    <!-- Manual Entry Column -->
+                    <div class="col-md-6">
+                        <form id="barcodeForm" method="post" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="barcode-id" class="font-weight-bold">Search Item Name or Enter Barcode ID:</label>
+                                <input type="text" name="barcode_id" id="barcode-id" class="form-control" placeholder="Search Item Name or Enter UPC here" maxlength="20" required>
+                            </div>
+                            <button type="submit" class="btn btn-custom">Submit</button>
+                        </form>
+                    </div>
+                    <!-- Camera Scan Column -->
+                    <div class="col-md-6 text-center">
+                        <p class="text-muted">Or scan your barcode with your camera</p>
+                        <button type="button" class="btn btn-custom" onclick="openNativeCamera()">
+                            <i class="fas fa-camera"></i> Scan Barcode Using Camera
+                        </button>
+                        <!-- Hidden file input for native camera capture -->
+                        <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
+                    </div>
                 </div>
-                <!-- Camera Scan Column -->
-                <div class="col-md-6 text-center">
-                    <p class="text-muted">Or scan your barcode with your camera</p>
-                    <button type="button" class="btn btn-custom" onclick="openNativeCamera()">
-                        <i class="fas fa-camera"></i> Scan Barcode Using Camera
+                <!-- Feedback element for scan errors -->
+                <div id="scan-feedback" class="alert alert-warning mt-3" style="display:none;">
+                    No barcode detected. Please try again or ensure the barcode is clearly visible.
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="section-card">
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    {% for message in messages %}
+                    <p class="mb-0">{{ message|safe }}</p>
+                    {% endfor %}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
                     </button>
-                    <!-- Hidden file input for native camera capture -->
-                    <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
                 </div>
-            </div>
-            <!-- Feedback element for scan errors -->
-            <div id="scan-feedback" class="alert alert-warning mt-3" style="display:none;">
-                No barcode detected. Please try again or ensure the barcode is clearly visible.
-            </div>
-        </section>
+                {% endif %}
+                {% endwith %}
+            </section>
 
-        <!-- Results Section -->
-        <section class="section-card">
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-            <div class="alert alert-info alert-dismissible fade show" role="alert">
-                {% for message in messages %}
-                <p class="mb-0">{{ message|safe }}</p>
-                {% endfor %}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            {% endif %}
-            {% endwith %}
-        </section>
+            <!-- About Section -->
+            <section id="about" class="section-card">
+                <h2>About Our App</h2>
+                <p>
+                    Our barcode scanner app is an innovative solution developed by the Business Affairs Committee of the
+                    Wentworth Student Government. Designed specifically for college students, it offers a quick and reliable
+                    way to navigate Tessie’s market—empowering you to check product prices at a glance.
+                </p>
+                <p>
+                    Built with Python, JavaScript, and HTML, the app combines state-of-the-art scanning technology with a
+                    user-friendly interface to ensure smooth and accurate performance. Our passionate team created this tool
+                    to meet the everyday needs of students, making your shopping experience more convenient.
+                </p>
+                <p>
+                    Interested in how we built it, or want to collaborate on the project? Check out our GitHub!
+                </p>
+                <div class="text-center mt-3">
+                    <a href="https://github.com/jdank417/GroceryBarcodeScanner" target="_blank" class="btn-code">
+                        git clone https://github.com/jdank417/GroceryBarcodeScanner.git
+                    </a>
+                </div>
+            </section>
 
-        <!-- About Section -->
-        <section id="about" class="section-card">
-            <h2>About Our App</h2>
-            <p>
-                Our barcode scanner app is an innovative solution developed by the Business Affairs Committee of the
-                Wentworth Student Government. Designed specifically for college students, it offers a quick and reliable
-                way to navigate Tessie’s market—empowering you to check product prices at a glance.
-            </p>
-            <p>
-                Built with Python, JavaScript, and HTML, the app combines state-of-the-art scanning technology with a
-                user-friendly interface to ensure smooth and accurate performance. Our passionate team created this tool
-                to meet the everyday needs of students, making your shopping experience more convenient.
-            </p>
-            <p>
-                Interested in how we built it, or want to collaborate on the project? Check out our GitHub!
-            </p>
-            <div class="text-center mt-3">
-                <!-- GitHub Button styled as code -->
-                <a href="https://github.com/jdank417/GroceryBarcodeScanner" target="_blank" class="btn-code">git clone
-                    https://github.com/jdank417/GroceryBarcodeScanner.git</a>
-            </div>
-        </section>
-
-        <!-- Contact Section -->
-        <section id="contact" class="section-card">
-            <h2>Contact Us</h2>
-            <ul class="list-unstyled" style="font-size: 20px; font-family: 'Times New Roman', serif;">
-                <li>Jason Dank (PM/Fullstack): <a href="mailto:dankj@wit.edu">dankj@wit.edu</a></li>
-                <li>Aliya Vagapova (UI/UX): <a href="mailto:vagapovaa@wit.edu">vagapovaa@wit.edu</a></li>
-                <li>WSG: <a href="mailto:wsg@wit.edu">wsg@wit.edu</a></li>
-            </ul>
-        </section>
-    </div>
-</main>
-
-<!-- Footer -->
-<footer>
-    <div class="container">
-        <p class="mb-0">&copy; 2025 Wentworth Institute of Technology. All Rights Reserved.</p>
-    </div>
-</footer>
-
-<!-- Modal Notification (Intrusive) -->
-<div class="modal fade" id="notificationModal" tabindex="-1" role="dialog" aria-labelledby="notificationModalLabel"
-     aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="notificationModalLabel">Important Update</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                You can now search by product name in the search box! Try entering part of a product name.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-dismiss="modal">Got it!</button>
-            </div>
+            <!-- Contact Section -->
+            <section id="contact" class="section-card">
+                <h2>Contact Us</h2>
+                <ul class="list-unstyled" style="font-size: 20px; font-family: 'Times New Roman', serif;">
+                    <li>Jason Dank (PM/Fullstack): <a href="mailto:dankj@wit.edu">dankj@wit.edu</a></li>
+                    <li>Aliya Vagapova (UI/UX): <a href="mailto:vagapovaa@wit.edu">vagapovaa@wit.edu</a></li>
+                    <li>WSG: <a href="mailto:wsg@wit.edu">wsg@wit.edu</a></li>
+                </ul>
+            </section>
         </div>
-    </div>
-</div>
+    </main>
 
-<!-- JavaScript Dependencies: jQuery, Popper, Bootstrap -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p class="mb-0">&copy; 2025 Wentworth Institute of Technology. All Rights Reserved.</p>
+        </div>
+    </footer>
 
-<!-- Custom JavaScript -->
-<script>
-    // Helper function: convert a data URL to a Blob.
-    function dataURLToBlob(dataURL) {
-        var arr = dataURL.split(','),
-            mime = arr[0].match(/:(.*?);/)[1],
-            bstr = atob(arr[1]),
-            n = bstr.length,
-            u8arr = new Uint8Array(n);
-        while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
+    <!-- JS Dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Helper function: convert a data URL to a Blob.
+        function dataURLToBlob(dataURL) {
+            var arr = dataURL.split(','),
+                mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]),
+                n = bstr.length,
+                u8arr = new Uint8Array(n);
+            while(n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new Blob([u8arr], {type: mime});
         }
-        return new Blob([u8arr], {type: mime});
-    }
 
-    // Updated error reporting function that sends the image file via FormData.
-    function reportClientError(errorMessage, details, imageData) {
-        console.log("Reporting client error:", errorMessage, details);
-
-        if (imageData) {
-            // Convert the dataURL to a Blob.
-            var blob = dataURLToBlob(imageData);
-            var formData = new FormData();
-            formData.append("barcode_image", blob, "failed_scan.jpg");
-            formData.append("error", errorMessage);
-            formData.append("details", details);
-
-            fetch('/log_client_error', {
-                method: 'POST',
-                body: formData
-            })
+        // Updated error reporting function that sends the image file via FormData.
+        function reportClientError(errorMessage, details, imageData) {
+            console.log("Reporting client error:", errorMessage, details);
+            if (imageData) {
+                var blob = dataURLToBlob(imageData);
+                var formData = new FormData();
+                formData.append("barcode_image", blob, "failed_scan.jpg");
+                formData.append("error", errorMessage);
+                formData.append("details", details);
+                fetch('/log_client_error', {
+                    method: 'POST',
+                    body: formData
+                })
                 .then(response => response.json())
                 .then(data => console.log('Error reported successfully (with image):', data))
                 .catch(err => console.error('Error reporting failed:', err));
-        } else {
-            // If no image data, send as JSON.
-            let payload = {error: errorMessage, details: details};
-            fetch('/log_client_error', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
+            } else {
+                let payload = {error: errorMessage, details: details};
+                fetch('/log_client_error', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
                 .then(response => response.json())
                 .then(data => console.log('Error reported successfully (no image):', data))
                 .catch(err => console.error('Error reporting failed:', err));
-        }
-    }
-
-    // Barcode decode function.
-    function decodeBarcode(dataURL) {
-        Quagga.decodeSingle({
-            src: dataURL,
-            numOfWorkers: 0,
-            decoder: {
-                readers: [
-                    "code_128_reader",
-                    "ean_reader",
-                    "ean_8_reader",
-                    "code_39_reader",
-                    "upc_reader"
-                ]
             }
-        }, function (result) {
-            if (result && result.codeResult) {
-                var code = result.codeResult.code;
-                if (code.length === 13 && code.charAt(0) === '0') {
-                    code = code.slice(1);
+        }
+
+        // Barcode decode function.
+        function decodeBarcode(dataURL) {
+            Quagga.decodeSingle({
+                src: dataURL,
+                numOfWorkers: 0,
+                decoder: {
+                    readers: [
+                        "code_128_reader",
+                        "ean_reader",
+                        "ean_8_reader",
+                        "code_39_reader",
+                        "upc_reader"
+                    ]
                 }
-                var barcodeInput = document.getElementById('barcode-id');
-                barcodeInput.value = code;
-                console.log("Barcode detected:", code);
-                // Auto-submit the form after a successful scan.
-                document.getElementById('barcodeForm').submit();
-            } else {
-                console.log("No barcode detected in the image. Triggering error reporting.");
-                var feedbackEl = document.getElementById('scan-feedback');
-                feedbackEl.style.display = 'block';
-                setTimeout(function () {
-                    feedbackEl.style.display = 'none';
-                }, 3000);
-                // Pass the captured image data (dataURL) to the error reporting function.
-                reportClientError("Barcode not detected", "The uploaded image did not contain a readable barcode.", dataURL);
+            }, function(result) {
+                if (result && result.codeResult) {
+                    var code = result.codeResult.code;
+                    if (code.length === 13 && code.charAt(0) === '0') {
+                        code = code.slice(1);
+                    }
+                    var barcodeInput = document.getElementById('barcode-id');
+                    barcodeInput.value = code;
+                    console.log("Barcode detected:", code);
+                    document.getElementById('barcodeForm').submit();
+                } else {
+                    console.log("No barcode detected in the image. Triggering error reporting.");
+                    var feedbackEl = document.getElementById('scan-feedback');
+                    feedbackEl.style.display = 'block';
+                    setTimeout(function() {
+                        feedbackEl.style.display = 'none';
+                    }, 3000);
+                    reportClientError("Barcode not detected", "The uploaded image did not contain a readable barcode.", dataURL);
+                }
+            });
+        }
+
+        // Open native camera/file picker.
+        function openNativeCamera() {
+            document.getElementById("native-camera-input").click();
+        }
+
+        // Listen for changes on the hidden file input.
+        document.getElementById("native-camera-input").addEventListener("change", function(e) {
+            if (e.target.files && e.target.files[0]) {
+                var file = e.target.files[0];
+                var reader = new FileReader();
+                reader.onload = function(evt) {
+                    var dataURL = evt.target.result;
+                    console.log("Image captured, attempting to decode barcode.");
+                    decodeBarcode(dataURL);
+                };
+                reader.readAsDataURL(file);
             }
         });
-    }
 
-    // Open native camera/file picker.
-    function openNativeCamera() {
-        document.getElementById("native-camera-input").click();
-    }
-
-    // Listen for changes on the hidden file input.
-    document.getElementById("native-camera-input").addEventListener("change", function (e) {
-        if (e.target.files && e.target.files[0]) {
-            var file = e.target.files[0];
-            var reader = new FileReader();
-            reader.onload = function (evt) {
-                var dataURL = evt.target.result;
-                console.log("Image captured, attempting to decode barcode.");
-                decodeBarcode(dataURL);
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    // Dark mode toggle functionality.
-    document.getElementById('themeToggle').addEventListener('click', function () {
-        const htmlEl = document.documentElement;
-        if (htmlEl.getAttribute('data-theme') === 'light') {
-            htmlEl.setAttribute('data-theme', 'dark');
-            this.textContent = "Switch to Light Mode";
-        } else {
-            htmlEl.setAttribute('data-theme', 'light');
-            this.textContent = "Switch to Dark Mode";
-        }
-    });
-
-    // Show modal notification on initial load.
-    $(document).ready(function () {
-        if (!localStorage.getItem('notificationModalShown')) {
-            $('#notificationModal').modal('show');
-            localStorage.setItem('notificationModalShown', 'true');
-        }
-    });
-</script>
+        // Dark mode toggle functionality with persistence.
+        document.getElementById('themeToggle').addEventListener('click', function () {
+            const htmlEl = document.documentElement;
+            if (htmlEl.getAttribute('data-theme') === 'light') {
+                htmlEl.setAttribute('data-theme', 'dark');
+                this.textContent = "Switch to Light Mode";
+                localStorage.setItem('theme', 'dark');
+            } else {
+                htmlEl.setAttribute('data-theme', 'light');
+                this.textContent = "Switch to Dark Mode";
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    </script>
 </body>
 </html>
