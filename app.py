@@ -1,5 +1,4 @@
 import io
-
 from flask import Flask, render_template, request, flash, session, redirect, url_for, Response, jsonify
 from markupsafe import Markup
 import pandas as pd
@@ -19,10 +18,18 @@ from werkzeug.utils import secure_filename
 try:
     from PIL import Image
     import pillow_heif
-
     pillow_heif.register_heif_opener()
 except ImportError:
     Image = None
+
+# New imports for server‐side barcode detection
+try:
+    import cv2
+    import numpy as np
+    from pyzbar.pyzbar import decode as decode_barcode
+    import base64
+except ImportError:
+    cv2 = None
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # Use environment variables in production.
@@ -330,6 +337,59 @@ def log_client_error():
 
     app.logger.error(f"Client error: {error} – {details}")
     return jsonify({"status": "logged"}), 200
+
+
+@app.route("/detect_barcode_region", methods=["POST"])
+def detect_barcode_region():
+    """
+    Processes an uploaded image, detects the barcode region using pyzbar,
+    expands the detected region by a margin to include surrounding packaging,
+    crops the image to that expanded bounding box, and returns the cropped image (base64-encoded)
+    along with the bounding box coordinates.
+    """
+    if 'barcode_image' not in request.files:
+        return jsonify({"error": "No image file provided"}), 400
+    file = request.files["barcode_image"]
+    if file.filename == "":
+        return jsonify({"error": "No file selected"}), 400
+    if cv2 is None:
+        return jsonify({"error": "OpenCV is not available"}), 500
+
+    # Read image bytes and decode with OpenCV.
+    file_bytes = np.frombuffer(file.read(), np.uint8)
+    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    if img is None:
+        return jsonify({"error": "Could not decode image"}), 400
+
+    barcodes = decode_barcode(img)
+    if not barcodes:
+        return jsonify({"error": "No barcode detected"}), 200
+
+    # For simplicity, take the first detected barcode.
+    barcode = barcodes[0]
+    # Use .left and .top for coordinates.
+    x, y, w, h = barcode.rect.left, barcode.rect.top, barcode.rect.width, barcode.rect.height
+
+    # Expand the region by a margin (10% of width and height)
+    margin_w = int(0.25 * w)
+    margin_h = int(0.25 * h)
+    x_new = max(0, x - margin_w)
+    y_new = max(0, y - margin_h)
+    x_end = min(img.shape[1], x + w + margin_w)
+    y_end = min(img.shape[0], y + h + margin_h)
+
+    cropped = img[y_new:y_end, x_new:x_end]
+
+    # Encode the cropped image to JPEG and then to base64.
+    retval, buffer = cv2.imencode('.jpg', cropped)
+    jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+
+    return jsonify({
+        "cropped_image": jpg_as_text,
+        "bounding_box": {"x": x_new, "y": y_new, "w": x_end - x_new, "h": y_end - y_new}
+    })
+
+
 
 
 @app.route("/metrics")
