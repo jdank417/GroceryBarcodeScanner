@@ -1,3 +1,17 @@
+"""
+GroceryBarcodeScanner - Barcode Scanning Software
+Copyright (c) 2024 Jason Dank
+
+This software is licensed under the End User License Agreement (EULA).
+Unauthorized use, distribution, or modification is strictly prohibited.
+
+By using this software, you agree to the terms outlined in the EULA.
+For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com.
+
+"""
+
+
+
 import io
 from flask import Flask, render_template, request, flash, session, redirect, url_for, Response, jsonify
 from markupsafe import Markup
