@@ -60,7 +60,7 @@ if not os.path.exists(UPLOAD_FOLDER):
     app.logger.info(f"Created UPLOAD_FOLDER at {UPLOAD_FOLDER}")
 
 # Path to your Excel file
-EXCEL_FILE_PATH = 'Item Database/output.xlsx'
+EXCEL_FILE_PATH = 'Item Database/output2.xlsx'
 df = pd.read_excel(EXCEL_FILE_PATH, dtype={'ItemNumber': str})
 df["ItemNumber"] = df["ItemNumber"].str.replace(r'\.0$', '', regex=True).str.strip()
 
