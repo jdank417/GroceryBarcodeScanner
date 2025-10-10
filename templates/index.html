@@ -27,33 +27,18 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <!-- QuaggaJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-  <!-- Custom CSS -->
+  <!-- Modern CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
+  <!-- Optional: Include a code font -->
+  <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet">
+  <!-- Custom page styles -->
   <style>
-    :root {
-      --bg-color: #f8f9fa;
-      --text-color: #343a40;
-      --accent-color: #FFD700;
-      --header-bg: #000;
-      --header-text: #FFD700;
-      --card-bg: rgba(255, 255, 255, 0.9);
-    }
-    [data-theme="dark"] {
-      --bg-color: #343a40;
-      --text-color: rgba(220, 220, 220, 1);
-      --accent-color: #B8860B;
-      --header-bg: #222;
-      --header-text: #B8860B;
-      --card-bg: rgba(52, 58, 64, 1);
-    }
     html {
       scroll-behavior: smooth;
     }
     body {
-      font-family: 'Roboto', sans-serif;
       margin: 0;
       padding: 0;
-      background-color: var(--bg-color);
-      color: var(--text-color);
       background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('../static/uploads/IMG_7383.jpg');
       background-size: cover;
       background-position: center;
@@ -75,124 +60,50 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
       z-index: 0;
       pointer-events: none;
     }
-    header {
-      background-color: var(--header-bg);
-      color: var(--header-text);
-      border-bottom: 3px solid var(--accent-color);
-      position: relative;
-      z-index: 1;
-    }
-    header .logo {
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-    header nav ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      gap: 20px;
-    }
-    header nav ul li a {
-      color: var(--header-text);
-      text-decoration: none;
-      font-weight: bold;
-      transition: color 0.6s ease, background-color 0.6s ease;
-      padding: 5px 10px;
-      border-radius: 5px;
-    }
-    header nav ul li a:hover {
-      color: var(--header-bg);
-      background-color: var(--accent-color);
-    }
-    .theme-toggle button {
-      background: none;
-      border: none;
-      color: var(--header-text);
-      font-weight: bold;
-      cursor: pointer;
-      outline: none;
-    }
-    main {
-      flex: 1;
-      padding: 20px;
-      position: relative;
-      z-index: 1;
-    }
     .logo-container {
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 10px 0;
+      padding: 8px 0;
     }
-    .logo-img {
-      width: 250px;
-      height: auto;
+    /* Preview images for debugging */
+    #preview, #processedPreview {
+      max-width: 150px;
+      margin-top: 8px;
+      display: none;
+      border: 1px solid var(--primary);
+      border-radius: 4px;
     }
-    @media (min-width: 768px) {
-      .logo-img { width: 375px; }
-    }
-    @media (min-width: 1024px) {
-      .logo-img { width: 500px; }
-    }
-    .section-card {
-      background-color: var(--card-bg);
-      border-top: 5px solid var(--accent-color);
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      margin-bottom: 30px;
-      position: relative;
-      z-index: 1;
-    }
-    [data-theme="dark"] .section-card {
-      background-color: rgba(0, 0, 0, 0.5);
-      border-top: 5px solid var(--accent-color);
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    }
-    .section-card p {
-      font-size: 18px;
-      line-height: 1.6;
-    }
-    .btn-custom {
-      background-color: var(--accent-color);
-      color: var(--text-color);
-      border: none;
-      padding: 10px 20px;
-      cursor: pointer;
-      border-radius: 5px;
-      font-size: 16px;
-      font-family: "Times New Roman", serif;
-      transition: background-color 0.3s ease;
-    }
-    .btn-custom:hover { background-color: #e6c200; }
     .btn-code {
       background-color: #2d2d2d;
       color: #f8f8f2;
       font-family: 'Source Code Pro', monospace;
-      font-size: 14px;
-      padding: 10px 20px;
+      font-size: 13px;
+      padding: 8px 16px;
       border: 1px solid #444;
       border-radius: 4px;
       text-decoration: none;
       display: inline-block;
-      transition: background-color 0.3s ease, transform 0.2s ease;
+      transition: background-color 0.2s ease;
     }
     .btn-code:hover {
       background-color: #3a3a3a;
-      transform: translateY(-2px);
     }
-    /* Preview images for debugging */
-    #preview, #processedPreview {
-      max-width: 200px;
-      margin-top: 10px;
-      display: none;
-      border: 2px solid var(--accent-color);
-      border-radius: 5px;
+    /* More compact section cards */
+    .section-card {
+      background-color: var(--card-bg);
+      border-top: 3px solid var(--primary);
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px var(--shadow-color);
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    [data-theme="dark"] .section-card {
+      background-color: rgba(30, 30, 30, 0.8);
     }
   </style>
-  <!-- Optional: Include a code font -->
-  <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet">
   <!-- Script to persist dark mode -->
   <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -200,31 +111,65 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
       document.documentElement.setAttribute('data-theme', currentTheme);
       const toggleButton = document.getElementById('themeToggle');
       if (toggleButton) {
-        toggleButton.textContent = currentTheme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode";
+        const iconElement = toggleButton.querySelector('i');
+        if (currentTheme === 'dark') {
+          iconElement.classList.remove('fa-moon');
+          iconElement.classList.add('fa-sun');
+        } else {
+          iconElement.classList.remove('fa-sun');
+          iconElement.classList.add('fa-moon');
+        }
       }
     });
   </script>
 </head>
 <body>
   <!-- Header -->
-  <header class="py-3">
-    <div class="container d-flex justify-content-between align-items-center">
-      <div class="logo">
-        <div>Wentworth</div>
-        <small>Institute of Technology</small>
+  <header>
+    <nav class="navbar navbar-expand-lg">
+      <div class="container">
+        <a class="navbar-brand" href="#">
+          <div class="brand-text">Wentworth</div>
+          <small>Institute of Technology</small>
+        </a>
+        
+        <!-- Add style for better brand visibility in dark mode -->
+        <style>
+          [data-theme="dark"] .navbar-brand {
+            color: var(--primary);
+            text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+          }
+          
+          [data-theme="dark"] .navbar-brand .brand-text {
+            font-weight: bold;
+          }
+        </style>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"><i class="fas fa-bars"></i></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+              <a class="nav-link active" href="#home">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#about">About</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#contact">Contact</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+            </li>
+            <li class="nav-item ml-2">
+              <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
-      <nav>
-        <ul class="d-flex">
-          <li><a href="#home" class="mr-3">Home</a></li>
-          <li><a href="#about" class="mr-3">About</a></li>
-          <li><a href="#contact" class="mr-3">Contact</a></li>
-          <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-        </ul>
-      </nav>
-      <div class="theme-toggle">
-        <button id="themeToggle">Switch to Dark Mode</button>
-      </div>
-    </div>
+    </nav>
   </header>
 
   <!-- Main Content -->
@@ -232,91 +177,335 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
     <div class="container">
       <!-- Logo Image -->
       <div class="logo-container">
-        <img src="../static/uploads/BAC_Logo_tr.png" alt="Logo" class="logo-img">
+        <img src="../static/uploads/BAC_Logo_tr.png" alt="Logo" class="logo-img light-mode-logo">
+        <img src="../static/uploads/BAC_Logo_tr_dar.png" alt="Logo" class="logo-img dark-mode-logo" style="display: none;">
       </div>
+      
+      <!-- Script to toggle logo based on theme -->
+      <script>
+        function updateLogo() {
+          const currentTheme = document.documentElement.getAttribute('data-theme');
+          const lightLogo = document.querySelector('.light-mode-logo');
+          const darkLogo = document.querySelector('.dark-mode-logo');
+          
+          if (currentTheme === 'dark') {
+            lightLogo.style.display = 'none';
+            darkLogo.style.display = 'block';
+          } else {
+            lightLogo.style.display = 'block';
+            darkLogo.style.display = 'none';
+          }
+        }
+        
+        // Update logo on page load
+        document.addEventListener('DOMContentLoaded', updateLogo);
+        
+        // Update logo when theme changes
+        const observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.attributeName === 'data-theme') {
+              updateLogo();
+            }
+          });
+        });
+        
+        observer.observe(document.documentElement, { attributes: true });
+      </script>
 
-      <!-- Upload / Scan Section -->
-      <section class="section-card">
-        <p class="text-center text-muted" style="font-size: 16px;">
-          You can either search by Item Name, enter the UPC manually, or scan the barcode using your camera.
+      <!-- Results placeholder (initially empty, will be populated after first search) -->
+      <div id="results-top" class="section-card fade-in" style="display: none;">
+        <div id="results-content-top"></div>
+      </div>
+      
+      <!-- Upload / Scan Section with Integrated Results -->
+      <section class="section-card fade-in">
+        <h4 class="text-center mb-4"><i class="fas fa-barcode"></i> Barcode Scanner</h4>
+        <p class="text-center mb-4">
+          You can search by Item Name, enter the UPC manually, or scan the barcode using your camera.
           For best results, ensure good lighting and a steady hand.
         </p>
         <div class="row">
           <!-- Manual Entry Column -->
-          <div class="col-md-6">
-            <form id="barcodeForm" method="post" enctype="multipart/form-data">
-              <div class="form-group">
-                <label for="barcode-id" class="font-weight-bold">Search Item Name or Enter Barcode ID:</label>
-                <input type="text" name="barcode_id" id="barcode-id" class="form-control" placeholder="Search Item Name or Enter UPC here" maxlength="20" required>
+          <div class="col-md-6 mb-4">
+            <div class="card h-100">
+              <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-keyboard"></i> Manual Entry</h5>
               </div>
-              <button type="submit" class="btn btn-custom">Submit</button>
-            </form>
+              <div class="card-body">
+                <form id="barcodeForm" method="post" enctype="multipart/form-data">
+                  <div class="form-group">
+                    <label for="barcode-id">Search Item Name or Enter Barcode ID:</label>
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                      </div>
+                      <input type="text" name="barcode_id" id="barcode-id" class="form-control" 
+                        placeholder="Search Item Name or Enter UPC here" maxlength="20" required>
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-paper-plane"></i> Submit
+                  </button>
+                </form>
+              </div>
+            </div>
           </div>
+          
           <!-- Camera Scan Column -->
-          <div class="col-md-6 text-center">
-            <p class="text-muted">Or scan your barcode with your camera</p>
-            <button type="button" class="btn btn-custom" onclick="openNativeCamera()">
-              <i class="fas fa-camera"></i> Scan Barcode Using Camera
-            </button>
-            <!-- Hidden file input for native camera capture -->
-            <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
-            <!-- Preview images for debugging -->
-            <img id="preview" alt="Captured Image Preview">
-            <img id="processedPreview" alt="Processed Image Preview">
+          <div class="col-md-6 mb-4">
+            <div class="card h-100">
+              <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-camera"></i> Camera Scan</h5>
+              </div>
+              <div class="card-body text-center">
+                <p>Scan your barcode with your device camera</p>
+                <button type="button" class="btn btn-primary btn-lg mb-3" onclick="openNativeCamera()">
+                  <i class="fas fa-camera"></i> Scan Barcode
+                </button>
+                <!-- Hidden file input for native camera capture -->
+                <input type="file" accept="image/*;capture=camera" id="native-camera-input" style="display:none">
+                
+                <div class="mt-3">
+                  <!-- Preview images for debugging -->
+                  <div class="row justify-content-center">
+                    <div class="col-6">
+                      <img id="preview" alt="Captured Image Preview" class="img-fluid rounded">
+                    </div>
+                    <div class="col-6">
+                      <img id="processedPreview" alt="Processed Image Preview" class="img-fluid rounded">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+        
         <!-- Feedback element for scan errors -->
-        <div id="scan-feedback" class="alert alert-warning mt-3" style="display:none;">
-          No barcode detected. Please try again or search manually using the UPC code.
+        <div id="scan-feedback" class="alert alert-warning mt-3 slide-in-up" style="display:none;">
+          <i class="fas fa-exclamation-triangle"></i> No barcode detected. Please try again or search manually using the UPC code.
         </div>
-      </section>
-
-      <!-- Results Section -->
-      <section class="section-card">
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-          {% for message in messages %}
-          <p class="mb-0">{{ message|safe }}</p>
-          {% endfor %}
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+        
+        <!-- Integrated Results Section -->
+        <div id="results-original" class="results-container mt-3">
+          <h5 class="text-center mb-3"><i class="fas fa-search-dollar"></i> Search Results</h5>
+          
+          {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              {% if category == 'info' %}
+                <div class="alert alert-info alert-dismissible fade show slide-in-up" role="alert">
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle fa-2x mr-3"></i>
+                    <div>
+                      {{ message|safe }}
+                    </div>
+                  </div>
+                  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+              {% elif category == 'warning' %}
+                <div class="alert alert-warning alert-dismissible fade show slide-in-up" role="alert">
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-triangle fa-2x mr-3"></i>
+                    <div>
+                      {{ message|safe }}
+                    </div>
+                  </div>
+                  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+              {% elif category == 'error' %}
+                <div class="alert alert-danger alert-dismissible fade show slide-in-up" role="alert">
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-times-circle fa-2x mr-3"></i>
+                    <div>
+                      {{ message|safe }}
+                    </div>
+                  </div>
+                  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+              {% else %}
+                <div class="alert alert-info alert-dismissible fade show slide-in-up" role="alert">
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle fa-2x mr-3"></i>
+                    <div>
+                      {{ message|safe }}
+                    </div>
+                  </div>
+                  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <div class="text-center text-muted results-placeholder">
+              <i class="fas fa-search fa-2x mb-2"></i>
+              <p>Search for a product by name or scan a barcode to see results here.</p>
+            </div>
+          {% endif %}
+          {% endwith %}
+          
+          <div class="text-center">
+            <p class="text-muted small">
+              <i class="fas fa-lightbulb"></i> Tip: You can search by partial product name or exact UPC code.
+            </p>
+          </div>
         </div>
-        {% endif %}
-        {% endwith %}
+        
+        <!-- Scanning Tips -->
+        <div class="mt-4">
+          <h5><i class="fas fa-lightbulb"></i> Scanning Tips:</h5>
+          <ul>
+            <li>Ensure good lighting conditions</li>
+            <li>Hold your device steady</li>
+            <li>Position the barcode in the center of the frame</li>
+            <li>Make sure the barcode is not damaged or obscured</li>
+          </ul>
+        </div>
       </section>
 
       <!-- About Section -->
-      <section id="about" class="section-card">
-        <h2>About Our App</h2>
-        <p>
-          Our barcode scanner app is an innovative solution developed by the Business Affairs Committee of the
-          Wentworth Student Government. Designed specifically for college students, it offers a quick and reliable
-          way to navigate Tessie’s market—empowering you to check product prices at a glance.
-        </p>
-        <p>
-          Built with Python, JavaScript, and HTML, the app combines state-of-the-art scanning technology with a
-          user-friendly interface to ensure smooth and accurate performance.
-        </p>
-        <p>
-          Interested in how we built it, or want to collaborate on the project? Check out our GitHub!
-        </p>
-        <div class="text-center mt-3">
-          <a href="https://github.com/jdank417/GroceryBarcodeScanner" target="_blank" class="btn-code">
-            git clone https://github.com/jdank417/GroceryBarcodeScanner.git
-          </a>
+      <section id="about" class="section-card fade-in">
+        <div class="row">
+          <div class="col-lg-8">
+            <h2 class="mb-4"><i class="fas fa-info-circle"></i> About Our App</h2>
+            <p class="lead">
+              Our barcode scanner app is an innovative solution developed by the Business Affairs Committee of the
+              Wentworth Student Government.
+            </p>
+            <div class="card mb-4">
+              <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-bullseye"></i> Our Mission</h5>
+                <p class="card-text">
+                  Designed specifically for college students, this app offers a quick and reliable
+                  way to navigate Tessie's market—empowering you to check product prices at a glance.
+                </p>
+              </div>
+            </div>
+            <div class="card mb-4">
+              <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-code"></i> Technology</h5>
+                <p class="card-text">
+                  Built with Python, JavaScript, and HTML, the app combines state-of-the-art scanning technology with a
+                  user-friendly interface to ensure smooth and accurate performance.
+                </p>
+                <div class="row text-center mt-3">
+                  <div class="col-4">
+                    <i class="fab fa-python fa-2x text-primary"></i>
+                    <p>Python</p>
+                  </div>
+                  <div class="col-4">
+                    <i class="fab fa-js fa-2x text-warning"></i>
+                    <p>JavaScript</p>
+                  </div>
+                  <div class="col-4">
+                    <i class="fab fa-html5 fa-2x text-danger"></i>
+                    <p>HTML/CSS</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p>
+              Interested in how we built it, or want to collaborate on the project? Check out our GitHub!
+            </p>
+            <div class="text-center mt-4">
+              <a href="https://github.com/jdank417/GroceryBarcodeScanner" target="_blank" class="btn-code">
+                <i class="fab fa-github"></i> git clone https://github.com/jdank417/GroceryBarcodeScanner.git
+              </a>
+            </div>
+          </div>
+          <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-star"></i> Key Features</h5>
+              </div>
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item"><i class="fas fa-camera text-primary mr-2"></i> Camera-based barcode scanning</li>
+                <li class="list-group-item"><i class="fas fa-search text-primary mr-2"></i> Product name search</li>
+                <li class="list-group-item"><i class="fas fa-database text-primary mr-2"></i> Robust database storage</li>
+                <li class="list-group-item"><i class="fas fa-file-excel text-primary mr-2"></i> Excel file uploads</li>
+                <li class="list-group-item"><i class="fas fa-chart-line text-primary mr-2"></i> Usage analytics</li>
+                <li class="list-group-item"><i class="fas fa-moon text-primary mr-2"></i> Dark mode support</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
 
       <!-- Contact Section -->
-      <section id="contact" class="section-card">
-        <h2>Contact Us</h2>
-        <ul class="list-unstyled" style="font-size: 20px; font-family: 'Times New Roman', serif;">
-          <li>Jason Dank (PM/Fullstack): <a href="mailto:dankj@wit.edu">dankj@wit.edu</a></li>
-          <li>Aliya Vagapova (UI/UX): <a href="mailto:vagapovaa@wit.edu">vagapovaa@wit.edu</a></li>
-          <li>WSG: <a href="mailto:wsg@wit.edu">wsg@wit.edu</a></li>
-        </ul>
+      <section id="contact" class="section-card fade-in">
+        <h2 class="mb-4"><i class="fas fa-envelope"></i> Contact Us</h2>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card mb-4">
+              <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-users"></i> Development Team</h5>
+                <ul class="list-unstyled">
+                  <li class="mb-3">
+                    <div class="d-flex align-items-center">
+                      <div class="contact-icon mr-3">
+                        <i class="fas fa-user-cog fa-2x text-primary"></i>
+                      </div>
+                      <div>
+                        <strong>Jason Dank</strong> (PM/Fullstack)<br>
+                        <a href="mailto:dankj@wit.edu"><i class="fas fa-envelope mr-1"></i>dankj@wit.edu</a>
+                      </div>
+                    </div>
+                  </li>
+                  <li class="mb-3">
+                    <div class="d-flex align-items-center">
+                      <div class="contact-icon mr-3">
+                        <i class="fas fa-paint-brush fa-2x text-primary"></i>
+                      </div>
+                      <div>
+                        <strong>Aliya Vagapova</strong> (UI/UX)<br>
+                        <a href="mailto:vagapovaa@wit.edu"><i class="fas fa-envelope mr-1"></i>vagapovaa@wit.edu</a>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="card mb-4">
+              <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-university"></i> Organization</h5>
+                <div class="d-flex align-items-center mb-3">
+                  <div class="contact-icon mr-3">
+                    <i class="fas fa-landmark fa-2x text-primary"></i>
+                  </div>
+                  <div>
+                    <strong>Wentworth Student Government</strong><br>
+                    <a href="mailto:wsg@wit.edu"><i class="fas fa-envelope mr-1"></i>wsg@wit.edu</a>
+                  </div>
+                </div>
+                
+                <h5 class="mt-4"><i class="fas fa-map-marker-alt"></i> Location</h5>
+                <p>
+                  Wentworth Institute of Technology<br>
+                  550 Huntington Ave<br>
+                  Boston, MA 02115
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-center mt-4">
+          <p class="lead">Have questions or suggestions? We'd love to hear from you!</p>
+          <a href="mailto:wsg@wit.edu" class="btn btn-primary">
+            <i class="fas fa-paper-plane"></i> Send us a message
+          </a>
+        </div>
       </section>
     </div>
   </main>
@@ -324,7 +513,46 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
   <!-- Footer -->
   <footer>
     <div class="container">
-      <p class="mb-0">&copy; 2025 Wentworth Institute of Technology. All Rights Reserved.</p>
+      <div class="row">
+        <div class="col-md-4 mb-4">
+          <h5 class="footer-heading">About the Project</h5>
+          <p>The Grocery Barcode Scanner is a student-led initiative to make shopping at Tessie's market easier and more efficient for the Wentworth community.</p>
+          <div class="footer-social">
+            <a href="https://github.com/jdank417/GroceryBarcodeScanner" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+            <a href="https://wit.edu" target="_blank" title="Wentworth"><i class="fas fa-university"></i></a>
+            <a href="mailto:wsg@wit.edu" title="Email Us"><i class="fas fa-envelope"></i></a>
+          </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+          <h5 class="footer-heading">Quick Links</h5>
+          <a href="#home" class="footer-link"><i class="fas fa-home mr-2"></i>Home</a>
+          <a href="#about" class="footer-link"><i class="fas fa-info-circle mr-2"></i>About</a>
+          <a href="#contact" class="footer-link"><i class="fas fa-envelope mr-2"></i>Contact</a>
+          <a href="{{ url_for('dashboard') }}" class="footer-link"><i class="fas fa-chart-line mr-2"></i>Dashboard</a>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+          <h5 class="footer-heading">Technologies</h5>
+          <div class="row">
+            <div class="col-6">
+              <a href="https://flask.palletsprojects.com/" target="_blank" class="footer-link"><i class="fab fa-python mr-2"></i>Flask</a>
+              <a href="https://www.sqlite.org/" target="_blank" class="footer-link"><i class="fas fa-database mr-2"></i>SQLite</a>
+              <a href="https://pandas.pydata.org/" target="_blank" class="footer-link"><i class="fas fa-table mr-2"></i>Pandas</a>
+            </div>
+            <div class="col-6">
+              <a href="https://getbootstrap.com/" target="_blank" class="footer-link"><i class="fab fa-bootstrap mr-2"></i>Bootstrap</a>
+              <a href="https://serratus.github.io/quaggaJS/" target="_blank" class="footer-link"><i class="fas fa-barcode mr-2"></i>QuaggaJS</a>
+              <a href="https://www.chartjs.org/" target="_blank" class="footer-link"><i class="fas fa-chart-bar mr-2"></i>Chart.js</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2025 Wentworth Institute of Technology. All Rights Reserved.</p>
+        <p class="small">Version 2.0 | Last Updated: October 2025</p>
+      </div>
     </div>
   </footer>
 
@@ -404,6 +632,8 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
           if (code.length === 13 && code.charAt(0) === '0') { code = code.slice(1); }
           document.getElementById('barcode-id').value = code;
           console.log("Barcode detected:", code);
+          // Set the search flag before submitting the form
+          localStorage.setItem('hasSearched', 'true');
           document.getElementById('barcodeForm').submit();
         } else if (fallbackDataURL) {
           console.log("Processed image decode failed, trying fallback (original) image.");
@@ -421,6 +651,8 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
               if (code.length === 13 && code.charAt(0) === '0') { code = code.slice(1); }
               document.getElementById('barcode-id').value = code;
               console.log("Barcode detected with fallback:", code);
+              // Set the search flag before submitting the form
+              localStorage.setItem('hasSearched', 'true');
               document.getElementById('barcodeForm').submit();
             } else {
               console.log("Fallback decode failed. Barcode scan unsuccessful.");
@@ -486,15 +718,92 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
     // Dark mode toggle functionality.
     document.getElementById('themeToggle').addEventListener('click', function () {
       const htmlEl = document.documentElement;
+      const iconElement = this.querySelector('i');
+      
       if (htmlEl.getAttribute('data-theme') === 'light') {
         htmlEl.setAttribute('data-theme', 'dark');
-        this.textContent = "Switch to Light Mode";
+        iconElement.classList.remove('fa-moon');
+        iconElement.classList.add('fa-sun');
         localStorage.setItem('theme', 'dark');
       } else {
         htmlEl.setAttribute('data-theme', 'light');
-        this.textContent = "Switch to Dark Mode";
+        iconElement.classList.remove('fa-sun');
+        iconElement.classList.add('fa-moon');
         localStorage.setItem('theme', 'light');
       }
+    });
+
+    // Function to reposition results above entry points after first search
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get references to the elements
+      const resultsOriginal = document.getElementById('results-original');
+      const resultsTop = document.getElementById('results-top');
+      const resultsContentTop = document.getElementById('results-content-top');
+      
+      // Check if there are any alert elements (search results)
+      const hasResults = resultsOriginal.querySelectorAll('.alert').length > 0;
+      
+      // Function to move results to top position
+      function moveResultsToTop() {
+        // Check if this is not the first page load or if there are results
+        const hasSearched = localStorage.getItem('hasSearched') === 'true';
+        
+        if (hasResults || hasSearched) {
+          // If there are results or user has searched before
+          if (hasResults) {
+            // Clone the content from original results
+            const resultsContent = resultsOriginal.innerHTML;
+            
+            // Update the top results content
+            resultsContentTop.innerHTML = resultsContent;
+            
+            // Hide the original results
+            resultsOriginal.style.display = 'none';
+            
+            // Show the top results with a smooth animation
+            resultsTop.style.display = 'block';
+            resultsTop.classList.add('slide-in-down');
+            
+            // Remember that user has searched
+            localStorage.setItem('hasSearched', 'true');
+            
+            // Scroll to the results
+            resultsTop.scrollIntoView({ behavior: 'smooth' });
+          } else {
+            // If no results but user has searched before, still show the empty results container at top
+            resultsTop.style.display = 'block';
+            resultsOriginal.style.display = 'none';
+          }
+        }
+      }
+      
+      // Add CSS for the slide-in-down animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes slideInDown {
+          from {
+            transform: translateY(-20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+        
+        .slide-in-down {
+          animation: slideInDown 0.5s ease-in-out;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // Call the function to move results
+      moveResultsToTop();
+      
+      // Also handle form submission to ensure results are moved after manual form submit
+      document.getElementById('barcodeForm').addEventListener('submit', function() {
+        localStorage.setItem('hasSearched', 'true');
+      });
     });
   </script>
 </body>

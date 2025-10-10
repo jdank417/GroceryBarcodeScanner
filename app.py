@@ -59,10 +59,229 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
     app.logger.info(f"Created UPLOAD_FOLDER at {UPLOAD_FOLDER}")
 
-# Path to your Excel file
+# Path to your Excel file (kept for backward compatibility)
 EXCEL_FILE_PATH = 'Item Database/output2.xlsx'
-df = pd.read_excel(EXCEL_FILE_PATH, dtype={'ItemNumber': str})
-df["ItemNumber"] = df["ItemNumber"].str.replace(r'\.0$', '', regex=True).str.strip()
+
+# Functions for processing Excel files and updating the database
+def load_initial_data():
+    """
+    Load initial data from Excel file into the products table if the table is empty.
+    """
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM products")
+    count = c.fetchone()[0]
+    conn.close()
+    
+    if count == 0:
+        logger.info("Products table is empty. Loading initial data from Excel file.")
+        try:
+            df = pd.read_excel(EXCEL_FILE_PATH, dtype={'ItemNumber': str})
+            df["ItemNumber"] = df["ItemNumber"].str.replace(r'\.0$', '', regex=True).str.strip()
+            process_dataframe(df)
+            logger.info(f"Successfully loaded {len(df)} products from Excel file.")
+        except Exception as e:
+            logger.error(f"Error loading initial data: {str(e)}")
+    else:
+        logger.info(f"Products table already contains {count} products. Skipping initial data load.")
+
+def process_dataframe(df):
+    """
+    Process a DataFrame and update the products table.
+    Handles multiple barcodes in comma-separated lists by creating separate entries for each barcode.
+    """
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    
+    # Begin transaction
+    conn.execute("BEGIN TRANSACTION")
+    
+    # Track changes
+    updates = 0
+    inserts = 0
+    skipped = 0
+    multiple_barcodes_count = 0
+    
+    try:
+        # Process each row
+        for idx, row in df.iterrows():
+            item_name = str(row.get("ItemName", "")).strip()
+            
+            # Handle price - ensure it's a valid float
+            try:
+                item_price = float(row.get("ItemPrice", 0))
+            except (ValueError, TypeError):
+                item_price = 0
+                logger.warning(f"Invalid price value for item {item_name}. Setting price to 0.")
+            
+            # Check if we have multiple barcodes to process
+            if "OriginalBarcodes" in row and "," in str(row["OriginalBarcodes"]):
+                original_barcodes = str(row["OriginalBarcodes"])
+                logger.info(f"Found comma-separated barcodes in row {idx}: {original_barcodes}")
+                
+                # Split the barcodes and process each one
+                barcodes = [b.strip() for b in original_barcodes.split(",") if b.strip()]
+                
+                if len(barcodes) > 1:
+                    logger.info(f"Processing {len(barcodes)} barcodes for item '{item_name}': {barcodes}")
+                    multiple_barcodes_count += 1
+                
+                # Skip if no valid barcodes
+                if not barcodes:
+                    logger.warning(f"Skipping row {idx}: No valid barcodes found in '{original_barcodes}'")
+                    skipped += 1
+                    continue
+            else:
+                # Single barcode case
+                item_number = str(row.get("ItemNumber", "")).strip()
+                if not item_number:
+                    logger.warning(f"Skipping row {idx}: Empty item number")
+                    skipped += 1
+                    continue
+                barcodes = [item_number]
+            
+            # Handle empty item name
+            if not item_name:
+                logger.warning(f"Row {idx} has empty item name but valid barcode(s). Using first barcode as name.")
+                item_name = f"Item #{barcodes[0]}"
+            
+            # Process each barcode for this item
+            for barcode in barcodes:
+                if not barcode:
+                    continue  # Skip empty barcodes
+                
+                # Check if item exists
+                c.execute("SELECT id FROM products WHERE item_number = ?", (barcode,))
+                result = c.fetchone()
+                
+                if result:
+                    # Update existing item
+                    c.execute("""
+                        UPDATE products 
+                        SET item_name = ?, item_price = ?, last_updated = ?
+                        WHERE item_number = ?
+                    """, (item_name, item_price, int(time.time()), barcode))
+                    updates += 1
+                    if idx < 5:  # Log sample updates for debugging
+                        logger.info(f"Updated item: {barcode} - {item_name} - ${item_price}")
+                else:
+                    # Insert new item
+                    c.execute("""
+                        INSERT INTO products (item_number, item_name, item_price, last_updated)
+                        VALUES (?, ?, ?, ?)
+                    """, (barcode, item_name, item_price, int(time.time())))
+                    inserts += 1
+                    if idx < 5:  # Log sample inserts for debugging
+                        logger.info(f"Inserted new item: {barcode} - {item_name} - ${item_price}")
+        
+        # Commit transaction
+        conn.commit()
+        conn.close()
+        
+        message = f"Successfully processed data. Updated {updates} items, added {inserts} new items."
+        if multiple_barcodes_count > 0:
+            message += f" Processed {multiple_barcodes_count} items with multiple barcodes."
+        if skipped > 0:
+            message += f" Skipped {skipped} rows with missing required data."
+        
+        logger.info(message)
+        return True, message
+    except Exception as e:
+        # Rollback on error
+        conn.rollback()
+        conn.close()
+        logger.error(f"Error processing data: {str(e)}")
+        return False, f"Error processing data: {str(e)}"
+
+def process_excel_upload(file_obj):
+    """
+    Process an uploaded Excel file and update the products table.
+    Handles various Excel formats by mapping columns to the expected format.
+    """
+    try:
+        # Read Excel file into DataFrame
+        df = pd.read_excel(file_obj)
+        logger.info(f"Excel file loaded with {len(df)} rows and columns: {', '.join(df.columns)}")
+        
+        # Define possible column mappings
+        column_mappings = {
+            "ItemNumber": ["ItemNumber", "Product Code", "Barcode", "UPC", "SKU", "Item Number"],
+            "ItemName": ["ItemName", "Product Name", "Name", "Item Name", "Description"],
+            "ItemPrice": ["ItemPrice", "Price", "Cost", "Item Price", "Retail Price"]
+        }
+        
+        # Create a new DataFrame with standardized column names
+        new_df = pd.DataFrame()
+        
+        # Map columns from the uploaded file to our expected format
+        for std_col, possible_cols in column_mappings.items():
+            found = False
+            for col in possible_cols:
+                if col in df.columns:
+                    # Special handling for any barcode column which might contain multiple values
+                    if std_col == "ItemNumber" and df[col].astype(str).str.contains(",").any():
+                        # Store the full barcode string (we'll handle multiple barcodes during processing)
+                        new_df[std_col] = df[col].astype(str)
+                        # Also store the original barcode column for later processing of multiple barcodes
+                        new_df["OriginalBarcodes"] = df[col].astype(str)
+                        logger.info(f"Found multiple barcodes in '{col}' column. Will process all barcodes.")
+                    else:
+                        new_df[std_col] = df[col]
+                    found = True
+                    logger.info(f"Mapped column '{col}' to '{std_col}'")
+                    break
+            
+            if not found:
+                logger.error(f"Could not find a column that maps to '{std_col}'. Available columns: {', '.join(df.columns)}")
+                return False, f"Error: Could not find a column that maps to '{std_col}'. Possible columns are: {', '.join(possible_cols)}"
+        
+        # Log sample data for debugging
+        if not new_df.empty:
+            sample_rows = min(5, len(new_df))
+            logger.info(f"Sample data (first {sample_rows} rows):")
+            for i, row in new_df.head(sample_rows).iterrows():
+                logger.info(f"Row {i}: ItemNumber='{row.get('ItemNumber', '')}', ItemName='{row.get('ItemName', '')}', ItemPrice='{row.get('ItemPrice', '')}'")
+        
+        # Clean up item numbers
+        new_df["ItemNumber"] = new_df["ItemNumber"].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
+        logger.info(f"Cleaned up item numbers. Sample: {', '.join(new_df['ItemNumber'].head(3).tolist())}")
+        
+        # Convert ItemPrice to float, handling any non-numeric values
+        try:
+            before_conversion = new_df["ItemPrice"].head(5).tolist()
+            new_df["ItemPrice"] = pd.to_numeric(new_df["ItemPrice"], errors="coerce").fillna(0)
+            after_conversion = new_df["ItemPrice"].head(5).tolist()
+            logger.info(f"Price conversion sample - Before: {before_conversion}, After: {after_conversion}")
+        except Exception as e:
+            logger.warning(f"Error converting prices to numeric values: {str(e)}. Setting missing prices to 0.")
+            new_df["ItemPrice"] = 0
+        
+        # Process the standardized DataFrame
+        logger.info(f"Prepared DataFrame with {len(new_df)} rows for processing")
+        return process_dataframe(new_df)
+    except Exception as e:
+        logger.error(f"Error processing Excel upload: {str(e)}")
+        return False, f"Error processing Excel file: {str(e)}"
+
+def get_product_stats():
+    """
+    Get statistics about the products table.
+    """
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*), MAX(last_updated) FROM products")
+    result = c.fetchone()
+    conn.close()
+    
+    count = result[0] if result else 0
+    last_updated = result[1] if result and result[1] else None
+    
+    if last_updated:
+        last_updated_str = datetime.datetime.fromtimestamp(last_updated).strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        last_updated_str = "Never"
+    
+    return count, last_updated_str
 
 # Prometheus counters
 lookup_success_counter = Counter("lookup_success_total", "Total successful UPC lookups")
@@ -77,11 +296,13 @@ DATABASE = "metrics.db"
 def init_db():
     """
     Initialize the SQLite database.
-    This function now only creates the table if it does not exist,
+    This function now only creates the tables if they do not exist,
     preserving existing data.
     """
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
+    
+    # Create events table
     c.execute("""
         CREATE TABLE IF NOT EXISTS events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,11 +312,90 @@ def init_db():
             item_name TEXT
         )
     """)
+    
+    # Create products table
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_number TEXT UNIQUE,
+            item_name TEXT,
+            item_price REAL,
+            last_updated INTEGER
+        )
+    """)
+    
     conn.commit()
     conn.close()
 
 
 init_db()
+load_initial_data()
+
+# Helper functions for product search and suggestions
+def get_all_product_numbers():
+    """
+    Get all product numbers from the database.
+    """
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute("SELECT item_number FROM products")
+    result = c.fetchall()
+    conn.close()
+    
+    return [item[0] for item in result]
+
+def get_product_suggestions(barcode_data, cutoff=0.6, n=5):
+    """
+    Get product suggestions based on similar item numbers.
+    """
+    product_numbers = get_all_product_numbers()
+    suggestions = difflib.get_close_matches(barcode_data, product_numbers, n=n, cutoff=cutoff)
+    
+    if not suggestions:
+        return []
+    
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    
+    results = []
+    for item_number in suggestions:
+        c.execute("SELECT item_number, item_name, item_price FROM products WHERE item_number = ?", (item_number,))
+        result = c.fetchone()
+        if result:
+            results.append({
+                "ItemNumber": result[0],
+                "ItemName": result[1],
+                "ItemPrice": result[2]
+            })
+    
+    conn.close()
+    return results
+
+def search_products_by_name(query, limit=5):
+    """
+    Search products by name.
+    """
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    
+    # Use LIKE for case-insensitive search
+    c.execute("""
+        SELECT item_number, item_name, item_price 
+        FROM products 
+        WHERE item_name LIKE ? 
+        LIMIT ?
+    """, (f"%{query}%", limit))
+    
+    results = []
+    for row in c.fetchall():
+        results.append({
+            "ItemNumber": row[0],
+            "ItemName": row[1],
+            "ItemPrice": row[2]
+        })
+    
+    conn.close()
+    return results
 
 
 def log_event_sql(event_type, sku=None, item_name=None):
@@ -136,21 +436,31 @@ def get_aggregated_counts():
 @lru_cache(maxsize=100)
 def lookup_item(barcode_data):
     """
-    Look up the item in the Excel DataFrame by SKU.
+    Look up the item in the database by SKU.
     If found, increment success counters and log the success with SKU + item_name.
     Otherwise, log a failure with the UPC.
     """
     barcode_data = str(barcode_data).strip()
-    item_info = df[df["ItemNumber"] == barcode_data]
-    if not item_info.empty:
-        item_name = item_info["ItemName"].values[0]
-        item_price = item_info["ItemPrice"].values[0]
+    
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    
+    # Look up the item by exact match
+    c.execute("SELECT item_name, item_price FROM products WHERE item_number = ?", (barcode_data,))
+    result = c.fetchone()
+    
+    conn.close()
+    
+    if result:
+        item_name, item_price = result
         lookup_success_counter.inc()
         log_event_sql("lookup_success", sku=barcode_data, item_name=item_name)
+        logger.info(f"Lookup success: Barcode {barcode_data} matched to {item_name} (${item_price})")
         return item_name, item_price
     else:
         lookup_failure_counter.inc()
         log_event_sql("lookup_failure", sku=barcode_data, item_name=None)
+        logger.info(f"Lookup failure: No match found for barcode {barcode_data}")
         return None, None
 
 
@@ -238,24 +548,21 @@ def index():
                 if item_name and item_price:
                     flash(f"Item: {item_name}, Price: ${item_price}", "info")
                 else:
-                    possible_upcs = df["ItemNumber"].tolist()
-                    suggestions = difflib.get_close_matches(sanitized_barcode, possible_upcs, n=5, cutoff=0.6)
+                    suggestions = get_product_suggestions(sanitized_barcode, cutoff=0.6, n=5)
                     if suggestions:
                         results_html = "<ul>"
-                        for upc in suggestions:
-                            suggestion = df[df["ItemNumber"] == upc].iloc[0]
-                            results_html += f"<li>{suggestion['ItemName']} (UPC: {upc}) - Price: ${suggestion['ItemPrice']}</li>"
+                        for suggestion in suggestions:
+                            results_html += f"<li>{suggestion['ItemName']} (UPC: {suggestion['ItemNumber']}) - Price: ${suggestion['ItemPrice']}</li>"
                         results_html += "</ul>"
                         flash(Markup("Item not found. Did you mean one of these?<br>" + results_html), "warning")
                     else:
-                        flash("Item not found in the Excel file.", "warning")
+                        flash("Item not found in the database.", "warning")
             else:
-                matches = df[df["ItemName"].str.contains(query, case=False, na=False)]
-                if not matches.empty:
-                    top_matches = matches.head(5)
+                matches = search_products_by_name(query, limit=5)
+                if matches:
                     results_html = "<ul>"
                     results_list = []
-                    for _, row in top_matches.iterrows():
+                    for row in matches:
                         results_html += f"<li>{row['ItemName']} (UPC: {row['ItemNumber']}) - Price: ${row['ItemPrice']}</li>"
                         results_list.append(
                             f"{row['ItemName']} (UPC: {row['ItemNumber']}) - Price: ${row['ItemPrice']}")
@@ -525,6 +832,36 @@ def item_events():
     return jsonify(events)
 
 
+@app.route("/upload_excel", methods=["POST"])
+def upload_excel():
+    """
+    Handle Excel file uploads from the admin dashboard.
+    """
+    if "admin" not in session:
+        return redirect(url_for("dashboard"))
+    
+    if "excel_file" not in request.files:
+        flash("No file part", "error")
+        return redirect(url_for("dashboard"))
+    
+    file = request.files["excel_file"]
+    
+    if file.filename == "":
+        flash("No selected file", "error")
+        return redirect(url_for("dashboard"))
+    
+    if file and file.filename.endswith((".xlsx", ".xls")):
+        success, message = process_excel_upload(file)
+        if success:
+            flash(message, "success")
+        else:
+            flash(message, "error")
+    else:
+        flash("Invalid file type. Please upload an Excel file (.xlsx or .xls)", "error")
+    
+    return redirect(url_for("dashboard"))
+
+
 @app.route("/dashboard", methods=["GET", "POST"])
 def dashboard():
     """
@@ -574,10 +911,24 @@ def dashboard():
         latest_failed_timestamp = datetime.datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
     else:
         app.logger.info("No latest failed image file found in uploads folder.")
+    
+    # Get product database statistics
+    product_count, last_product_update = get_product_stats()
+    
+    # Check for flash messages from Excel upload
+    excel_upload_message = None
+    excel_upload_status = None
+    if 'excel_upload_message' in session:
+        excel_upload_message = session.pop('excel_upload_message')
+        excel_upload_status = session.pop('excel_upload_status', 'info')
 
     return render_template("dashboard.html", metrics=metrics_data,
                            latest_failed_image=latest_failed_image,
-                           latest_failed_timestamp=latest_failed_timestamp)
+                           latest_failed_timestamp=latest_failed_timestamp,
+                           product_count=product_count,
+                           last_product_update=last_product_update,
+                           excel_upload_message=excel_upload_message,
+                           excel_upload_status=excel_upload_status)
 
 
 if __name__ == "__main__":

@@ -24,54 +24,61 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
     <link rel="icon" href="../static/uploads/favicon.png" sizes="32x32" type="image/png">
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Bootstrap Datepicker CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-datepicker/dist/css/bootstrap-datepicker.min.css">
+    <!-- Modern CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
+    <!-- Dashboard specific styles -->
     <style>
-        :root {
-            --bg-color: #f8f9fa;
-            --text-color: #343a40;
-            --card-bg: #fff;
-            --card-border: #dee2e6;
-        }
-        [data-theme="dark"] {
-            --bg-color: #343a40;
-            --text-color: #f8f9fa;
-            --card-bg: #495057;
-            --card-border: #6c757d;
-        }
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 40px;
-        }
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--card-border);
-        }
-        .toggle-theme {
-            cursor: pointer;
-            font-size: 0.9rem;
-            border: none;
-            background: none;
-            color: var(--text-color);
-        }
-        .chart-container {
-            width: 100%;
-            max-width: 900px;
-            margin: 40px auto;
-        }
         /* Hide item events container by default */
         #itemEventsContainer {
             max-width: 900px;
             margin: 20px auto;
             display: none;
         }
-        table {
-            width: 100%;
+        
+        /* Dashboard specific overrides - More Compact */
+        .dashboard-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.75rem 0;
+            margin-bottom: 1.5rem;
+            border-radius: 6px;
         }
-        th, td {
-            padding: 8px;
+        
+        .dashboard-title {
+            font-weight: 700;
+            margin-bottom: 0;
+            font-size: 1.5rem;
+        }
+        
+        .datepicker {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--input-border);
+            font-size: 0.95rem;
+        }
+        
+        .datepicker-dropdown {
+            background-color: var(--card-bg);
+            border-color: var(--card-border);
+        }
+        
+        .datepicker table tr td.active {
+            background-color: var(--primary) !important;
+        }
+        
+        /* Chart container enhancements - More Compact */
+        .chart-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: var(--card-bg);
+            padding: 1rem;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px var(--shadow-color);
         }
     </style>
     <!-- Chart.js -->
@@ -87,59 +94,306 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
             document.documentElement.setAttribute('data-theme', currentTheme);
             const toggleButton = document.getElementById('themeToggle');
             if (toggleButton) {
-                toggleButton.textContent = currentTheme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode";
+                const iconElement = toggleButton.querySelector('i');
+                if (currentTheme === 'dark') {
+                    iconElement.classList.remove('fa-moon');
+                    iconElement.classList.add('fa-sun');
+                } else {
+                    iconElement.classList.remove('fa-sun');
+                    iconElement.classList.add('fa-moon');
+                }
             }
         });
     </script>
 </head>
 <body>
-    <!-- Top Navigation and Dark Mode Toggle -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <a href="{{ url_for('index') }}" style="text-decoration: none; color: var(--text-color); font-weight: bold;">
-                Back to App
-            </a>
+    <!-- Navigation Bar -->
+    <header>
+        <nav class="navbar navbar-expand-lg">
+            <div class="container">
+                <a class="navbar-brand" href="{{ url_for('index') }}">
+                    <i class="fas fa-barcode mr-2"></i> <span class="brand-text">Grocery Scanner</span>
+                </a>
+                
+                <!-- Add style for better brand visibility in dark mode -->
+                <style>
+                    [data-theme="dark"] .navbar-brand {
+                        color: var(--primary);
+                        text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+                    }
+                    
+                    [data-theme="dark"] .navbar-brand .brand-text {
+                        font-weight: bold;
+                    }
+                </style>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"><i class="fas fa-bars"></i></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('index') }}">
+                                <i class="fas fa-home mr-1"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-chart-line mr-1"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item ml-2">
+                            <button class="theme-toggle" id="themeToggle">
+                                <i class="fas fa-moon"></i>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <div class="container mt-4">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header text-center py-4 mb-4">
+            <h1 class="dashboard-title">
+                <i class="fas fa-tachometer-alt mr-2"></i> Application Metrics Dashboard
+            </h1>
+            <p class="text-white mb-0">Monitor your application's performance and usage statistics</p>
         </div>
-        <button class="toggle-theme" id="themeToggle">Switch to Dark Mode</button>
-    </div>
-    <div class="container">
-        <h1 class="text-center mb-4">Application Metrics Dashboard</h1>
 
         <!-- Metrics Cards -->
-        <div class="row mb-3 text-center">
+        <div class="row mb-4">
             <div class="col-md-3 mb-3">
                 <div class="card">
-                    <div class="card-body">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-check-circle fa-3x text-success"></i>
+                        </div>
                         <h5>Successful Lookups</h5>
                         <p class="display-4">{{ metrics.lookup_success_total }}</p>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 75%;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3 mb-3">
                 <div class="card">
-                    <div class="card-body">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-exclamation-triangle fa-3x text-warning"></i>
+                        </div>
                         <h5>Lookup Failures</h5>
                         <p class="display-4">{{ metrics.lookup_failure_total }}</p>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: 50%;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3 mb-3">
                 <div class="card">
-                    <div class="card-body">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-camera-retro fa-3x text-danger"></i>
+                        </div>
                         <h5>Barcode Failures</h5>
                         <p class="display-4">{{ metrics.barcode_scan_failure_total }}</p>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: 25%;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3 mb-3">
                 <div class="card">
-                    <div class="card-body">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-percentage fa-3x text-info"></i>
+                        </div>
                         <h5>Success Rate</h5>
                         <p class="display-4">{{ metrics.success_rate }}%</p>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: 90%;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <!-- Summary Stats -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie mr-2"></i>Performance Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <h6 class="text-muted">Total Lookups</h6>
+                        <h3>{{ metrics.lookup_success_total + metrics.lookup_failure_total }}</h3>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-muted">Success/Failure Ratio</h6>
+                        <h3>{{ "%.2f"|format(metrics.lookup_success_total / 1 if metrics.lookup_failure_total == 0 else metrics.lookup_success_total / metrics.lookup_failure_total) }}</h3>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-muted">Scan Error Rate</h6>
+                        <h3>{{ "%.1f"|format(metrics.barcode_scan_failure_total * 100 / (metrics.lookup_success_total + metrics.lookup_failure_total + metrics.barcode_scan_failure_total) if (metrics.lookup_success_total + metrics.lookup_failure_total + metrics.barcode_scan_failure_total) > 0 else 0) }}%</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Excel Upload Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-file-excel mr-2"></i>Upload Product Data</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('upload_excel') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                    <div class="file-upload" id="dropZone">
+                        <input type="file" class="form-control-file" id="excel_file" name="excel_file" accept=".xlsx,.xls">
+                        <div class="file-upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="file-upload-text">Drag & Drop Excel File Here</div>
+                        <div class="file-upload-hint">or click to browse files</div>
+                        <div id="file-selected" class="mt-3 d-none">
+                            <span class="badge badge-primary p-2"><i class="fas fa-file-excel mr-2"></i><span id="file-name">No file selected</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload mr-2"></i>Upload File
+                        </button>
+                    </div>
+                </form>
+                
+                {% if excel_upload_message %}
+                <div class="alert alert-{{ excel_upload_status }} mt-4 slide-in-up" role="alert">
+                    <div class="d-flex align-items-center">
+                        {% if excel_upload_status == 'success' %}
+                            <i class="fas fa-check-circle fa-2x mr-3 text-success"></i>
+                        {% elif excel_upload_status == 'error' %}
+                            <i class="fas fa-times-circle fa-2x mr-3 text-danger"></i>
+                        {% else %}
+                            <i class="fas fa-info-circle fa-2x mr-3"></i>
+                        {% endif %}
+                        <div>{{ excel_upload_message }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="card mt-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-database mr-2"></i>Database Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-3">
+                                        <i class="fas fa-box fa-2x text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">Products in Database</h6>
+                                        <h3 class="mb-0">{{ product_count }}</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-3">
+                                        <i class="fas fa-clock fa-2x text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">Last Database Update</h6>
+                                        <p class="mb-0">{{ last_product_update }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-info-circle mr-2"></i>Supported Column Formats</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <i class="fas fa-tag text-primary mr-2"></i>
+                                        <strong>Product ID:</strong> "Product Code", "Barcode", "UPC", "SKU", or "ItemNumber"
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="fas fa-font text-primary mr-2"></i>
+                                        <strong>Product Name:</strong> "Product Name", "Name", "Description", or "ItemName"
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <i class="fas fa-dollar-sign text-primary mr-2"></i>
+                                        <strong>Price:</strong> "Price", "Cost", "Retail Price", or "ItemPrice"
+                                    </li>
+                                    <li class="list-group-item">
+                                        <i class="fas fa-barcode text-primary mr-2"></i>
+                                        <strong>Multiple UPCs:</strong> Comma-separated values (e.g., "404000739982,477088122700")
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- JavaScript for drag and drop functionality -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const dropZone = document.getElementById('dropZone');
+                const fileInput = document.getElementById('excel_file');
+                const fileSelected = document.getElementById('file-selected');
+                const fileName = document.getElementById('file-name');
+                
+                // Highlight drop area when item is dragged over it
+                dropZone.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    dropZone.classList.add('file-upload-dragover');
+                });
+                
+                dropZone.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    dropZone.classList.remove('file-upload-dragover');
+                });
+                
+                dropZone.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    dropZone.classList.remove('file-upload-dragover');
+                    
+                    if (e.dataTransfer.files.length) {
+                        fileInput.files = e.dataTransfer.files;
+                        updateFileName();
+                    }
+                });
+                
+                fileInput.addEventListener('change', updateFileName);
+                
+                function updateFileName() {
+                    if (fileInput.files.length > 0) {
+                        fileName.textContent = fileInput.files[0].name;
+                        fileSelected.classList.remove('d-none');
+                    } else {
+                        fileSelected.classList.add('d-none');
+                    }
+                }
+            });
+        </script>
 
         <!-- Collapsible Section for Latest Failed Image -->
         <div class="container mt-4 mb-4">
@@ -166,41 +420,155 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
             {% endif %}
         </div>
 
-        <!-- Date Range Form (for both chart and item events) -->
-        <form class="form-inline justify-content-center mb-4">
-            <div class="form-group mx-2">
-                <label for="startDate" class="mr-2">Start Date:</label>
-                <input type="text" class="form-control" id="startDate" placeholder="YYYY-MM-DD">
+        <!-- Data Visualization Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar mr-2"></i>Data Visualization</h5>
             </div>
-            <div class="form-group mx-2">
-                <label for="endDate" class="mr-2">End Date:</label>
-                <input type="text" class="form-control" id="endDate" placeholder="YYYY-MM-DD">
+            <div class="card-body">
+                <!-- Date Range Selector -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-calendar-alt mr-2"></i>Select Date Range</h6>
+                    </div>
+                    <div class="card-body">
+                        <form class="row align-items-end">
+                            <div class="col-md-4 mb-3">
+                                <label for="startDate">Start Date</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                    </div>
+                                    <input type="text" class="form-control" id="startDate" placeholder="YYYY-MM-DD">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="endDate">End Date</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                    </div>
+                                    <input type="text" class="form-control" id="endDate" placeholder="YYYY-MM-DD">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3 text-center">
+                                <button type="button" class="btn btn-primary mr-2" id="updateChartBtn">
+                                    <i class="fas fa-sync-alt mr-1"></i> Update Chart
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="showItemEventsBtn">
+                                    <i class="fas fa-list mr-1"></i> Show Events
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Chart Section -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-chart-line mr-2"></i>Activity Over Time</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="chartWrapper" class="position-relative">
+                            <div class="chart-container">
+                                <canvas id="combinedBarChart"></canvas>
+                            </div>
+                            <div id="chartLoading" class="position-absolute w-100 h-100 d-none loading" style="top: 0; left: 0;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Item Events Table -->
+                <div class="card" id="itemEventsCard">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-list-alt mr-2"></i>Item-Level Events</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="itemEventsContainer">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th><i class="fas fa-clock mr-1"></i> Time</th>
+                                            <th><i class="fas fa-tag mr-1"></i> Event Type</th>
+                                            <th><i class="fas fa-barcode mr-1"></i> Search/UPC</th>
+                                            <th><i class="fas fa-box mr-1"></i> Item / Search Results</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemEventsBody">
+                                        <!-- Event data will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="eventsLoading" class="text-center py-4 d-none">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                                <p class="mt-2">Loading events...</p>
+                            </div>
+                            <div id="noEventsMessage" class="text-center py-4 d-none">
+                                <i class="fas fa-info-circle fa-2x text-muted mb-2"></i>
+                                <p>No events found for the selected date range.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button type="button" class="btn btn-primary mx-2" id="updateChartBtn">Update Chart</button>
-            <button type="button" class="btn btn-secondary mx-2" id="showItemEventsBtn">Show Item Events</button>
-        </form>
-
-        <!-- Combined Bar Chart -->
-        <div class="chart-container">
-            <canvas id="combinedBarChart"></canvas>
         </div>
-
-        <!-- Item Events Table -->
-        <div id="itemEventsContainer">
-            <h4 class="mt-4">Item-Level Events</h4>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Event Type</th>
-                        <th>Search/UPC</th>
-                        <th>Item / Search Results</th>
-                    </tr>
-                </thead>
-                <tbody id="itemEventsBody">
-                </tbody>
-            </table>
-        </div>
+        
+        <!-- Add JavaScript for loading indicators -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const updateChartBtn = document.getElementById('updateChartBtn');
+                const showItemEventsBtn = document.getElementById('showItemEventsBtn');
+                const chartLoading = document.getElementById('chartLoading');
+                const eventsLoading = document.getElementById('eventsLoading');
+                const noEventsMessage = document.getElementById('noEventsMessage');
+                const itemEventsContainer = document.getElementById('itemEventsContainer');
+                const itemEventsBody = document.getElementById('itemEventsBody');
+                const itemEventsCard = document.getElementById('itemEventsCard');
+                
+                // Initially hide the events card
+                itemEventsCard.style.display = 'none';
+                
+                // Show loading indicator when updating chart
+                updateChartBtn.addEventListener('click', function() {
+                    chartLoading.classList.remove('d-none');
+                    setTimeout(function() {
+                        // This timeout simulates the chart update
+                        // The actual chart update is handled by the existing updateChart function
+                        chartLoading.classList.add('d-none');
+                    }, 1000);
+                });
+                
+                // Show loading indicator when showing events
+                showItemEventsBtn.addEventListener('click', function() {
+                    itemEventsCard.style.display = 'block';
+                    eventsLoading.classList.remove('d-none');
+                    itemEventsBody.innerHTML = '';
+                    
+                    // Scroll to the events section
+                    itemEventsCard.scrollIntoView({ behavior: 'smooth' });
+                    
+                    setTimeout(function() {
+                        // This timeout simulates the events loading
+                        // The actual events loading is handled by the existing showItemEvents function
+                        eventsLoading.classList.add('d-none');
+                        
+                        // Check if there are any events
+                        if (itemEventsBody.children.length === 0) {
+                            noEventsMessage.classList.remove('d-none');
+                        } else {
+                            noEventsMessage.classList.add('d-none');
+                        }
+                    }, 1000);
+                });
+            });
+        </script>
     </div>
 
     <!-- JS Dependencies: jQuery, Popper, Bootstrap, Datepicker -->
@@ -215,24 +583,60 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
         var myChart = null;
         document.getElementById('themeToggle').addEventListener('click', function () {
             const htmlEl = document.documentElement;
+            const iconElement = this.querySelector('i');
+            
             if (htmlEl.getAttribute('data-theme') === 'light') {
                 htmlEl.setAttribute('data-theme', 'dark');
-                this.textContent = "Switch to Light Mode";
+                iconElement.classList.remove('fa-moon');
+                iconElement.classList.add('fa-sun');
                 localStorage.setItem('theme', 'dark');
             } else {
                 htmlEl.setAttribute('data-theme', 'light');
-                this.textContent = "Switch to Dark Mode";
+                iconElement.classList.remove('fa-sun');
+                iconElement.classList.add('fa-moon');
                 localStorage.setItem('theme', 'light');
             }
-        });
-        document.addEventListener("DOMContentLoaded", function() {
-            const currentTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', currentTheme);
-            const toggleButton = document.getElementById('themeToggle');
-            if (toggleButton) {
-                toggleButton.textContent = currentTheme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode";
+            
+            // Update chart colors if chart exists
+            if (myChart) {
+                // Get the new theme
+                const isDarkMode = htmlEl.getAttribute('data-theme') === 'dark';
+                
+                // Update colors based on new theme
+                const colors = {
+                    success: {
+                        bg: isDarkMode ? 'rgba(45, 122, 67, 0.7)' : 'rgba(0, 128, 0, 0.7)',
+                        border: isDarkMode ? 'rgba(45, 122, 67, 1)' : 'rgba(0, 128, 0, 1)'
+                    },
+                    failure: {
+                        bg: isDarkMode ? 'rgba(161, 48, 48, 0.7)' : 'rgba(255, 0, 0, 0.7)',
+                        border: isDarkMode ? 'rgba(161, 48, 48, 1)' : 'rgba(255, 0, 0, 1)'
+                    },
+                    barcode: {
+                        bg: isDarkMode ? 'rgba(198, 144, 38, 0.7)' : 'rgba(255, 255, 0, 0.7)',
+                        border: isDarkMode ? 'rgba(198, 144, 38, 1)' : 'rgba(255, 255, 0, 1)'
+                    },
+                    search: {
+                        bg: isDarkMode ? 'rgba(156, 102, 68, 0.7)' : 'rgba(255, 165, 0, 0.7)',
+                        border: isDarkMode ? 'rgba(156, 102, 68, 1)' : 'rgba(255, 165, 0, 1)'
+                    }
+                };
+                
+                // Update dataset colors
+                myChart.data.datasets[0].backgroundColor = colors.success.bg;
+                myChart.data.datasets[0].borderColor = colors.success.border;
+                myChart.data.datasets[1].backgroundColor = colors.failure.bg;
+                myChart.data.datasets[1].borderColor = colors.failure.border;
+                myChart.data.datasets[2].backgroundColor = colors.barcode.bg;
+                myChart.data.datasets[2].borderColor = colors.barcode.border;
+                myChart.data.datasets[3].backgroundColor = colors.search.bg;
+                myChart.data.datasets[3].borderColor = colors.search.border;
+                
+                // Update the chart
+                myChart.update();
             }
         });
+        // Theme initialization is handled at the top of the page
         $('#startDate').datepicker({
             format: 'yyyy-mm-dd',
             autoclose: true,
@@ -311,6 +715,30 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
                 const barcodeCounts = mergedData.map(d => d.barcode);
                 const searchFailureCounts = mergedData.map(d => d.searchFailure);
                 const ctx = document.getElementById('combinedBarChart').getContext('2d');
+                
+                // Determine if dark mode is active
+                const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+                
+                // Define colors based on theme
+                const colors = {
+                    success: {
+                        bg: isDarkMode ? 'rgba(45, 122, 67, 0.7)' : 'rgba(0, 128, 0, 0.7)',
+                        border: isDarkMode ? 'rgba(45, 122, 67, 1)' : 'rgba(0, 128, 0, 1)'
+                    },
+                    failure: {
+                        bg: isDarkMode ? 'rgba(161, 48, 48, 0.7)' : 'rgba(255, 0, 0, 0.7)',
+                        border: isDarkMode ? 'rgba(161, 48, 48, 1)' : 'rgba(255, 0, 0, 1)'
+                    },
+                    barcode: {
+                        bg: isDarkMode ? 'rgba(198, 144, 38, 0.7)' : 'rgba(255, 255, 0, 0.7)',
+                        border: isDarkMode ? 'rgba(198, 144, 38, 1)' : 'rgba(255, 255, 0, 1)'
+                    },
+                    search: {
+                        bg: isDarkMode ? 'rgba(156, 102, 68, 0.7)' : 'rgba(255, 165, 0, 0.7)',
+                        border: isDarkMode ? 'rgba(156, 102, 68, 1)' : 'rgba(255, 165, 0, 1)'
+                    }
+                };
+                
                 myChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -319,29 +747,29 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
                             {
                                 label: 'Successful Lookups',
                                 data: successCounts,
-                                backgroundColor: 'rgba(0, 128, 0, 0.7)',
-                                borderColor: 'rgba(0, 128, 0, 1)',
+                                backgroundColor: colors.success.bg,
+                                borderColor: colors.success.border,
                                 borderWidth: 1
                             },
                             {
                                 label: 'Lookup Failures',
                                 data: failCounts,
-                                backgroundColor: 'rgba(255, 0, 0, 0.7)',
-                                borderColor: 'rgba(255, 0, 0, 1)',
+                                backgroundColor: colors.failure.bg,
+                                borderColor: colors.failure.border,
                                 borderWidth: 1
                             },
                             {
                                 label: 'Barcode Failures',
                                 data: barcodeCounts,
-                                backgroundColor: 'rgba(255, 255, 0, 0.7)',
-                                borderColor: 'rgba(255, 255, 0, 1)',
+                                backgroundColor: colors.barcode.bg,
+                                borderColor: colors.barcode.border,
                                 borderWidth: 1
                             },
                             {
                                 label: 'Product Search Failures',
                                 data: searchFailureCounts,
-                                backgroundColor: 'rgba(255, 165, 0, 0.7)',
-                                borderColor: 'rgba(255, 165, 0, 1)',
+                                backgroundColor: colors.search.bg,
+                                borderColor: colors.search.border,
                                 borderWidth: 1
                             }
                         ]

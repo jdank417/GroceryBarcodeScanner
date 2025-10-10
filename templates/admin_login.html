@@ -24,36 +24,92 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
     <link rel="icon" href="../static/uploads/favicon.png" sizes="32x32" type="image/png">
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Modern CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
+    <!-- Login page specific styles -->
     <style>
-        :root {
-            --bg-color: #f8f9fa;
-            --text-color: #343a40;
-            --card-bg: #fff;
-            --card-border: #dee2e6;
-        }
-        [data-theme="dark"] {
-            --bg-color: #343a40;
-            --text-color: #f8f9fa;
-            --card-bg: #495057;
-            --card-border: #6c757d;
-        }
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 40px;
+            background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('../static/uploads/IMG_7383.jpg');
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
-        .container {
+        
+        [data-theme="dark"] body {
+            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('../static/uploads/night_wentworth.jpg');
+        }
+        
+        .login-container {
             max-width: 400px;
-            margin: auto;
+            margin: 1.5rem auto;
         }
-        .toggle-theme {
-            cursor: pointer;
-            font-size: 0.9rem;
-            border: none;
-            background: none;
-            color: var(--text-color);
+        
+        .login-card {
+            border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .login-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .login-body {
+            padding: 1.5rem;
+        }
+        
+        .login-logo {
+            width: 100px;
+            height: auto;
+            margin-bottom: 0.75rem;
+            filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.3));
+        }
+        
+        [data-theme="dark"] .login-logo {
+            filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
+            opacity: 0.95;
+        }
+        
+        .login-title {
+            margin-bottom: 0;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .form-control {
+            height: 45px;
+            font-size: 1rem;
+        }
+        
+        .btn-login {
+            height: 45px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .login-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        
+        .login-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .login-footer a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
         }
     </style>
     <!-- Script to persist dark mode -->
@@ -63,37 +119,123 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
             document.documentElement.setAttribute('data-theme', currentTheme);
             const toggleButton = document.getElementById('themeToggle');
             if (toggleButton) {
-                toggleButton.textContent = currentTheme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode";
+                const iconElement = toggleButton.querySelector('i');
+                if (currentTheme === 'dark') {
+                    iconElement.classList.remove('fa-moon');
+                    iconElement.classList.add('fa-sun');
+                } else {
+                    iconElement.classList.remove('fa-sun');
+                    iconElement.classList.add('fa-moon');
+                }
             }
         });
     </script>
 </head>
 <body>
-    <!-- Dark Mode Toggle -->
-    <div class="d-flex justify-content-end mb-3">
-        <button class="toggle-theme" id="themeToggle">Switch to Dark Mode</button>
-    </div>
-    <div class="container">
-        <div class="card">
-            <div class="card-body">
-                <h2 class="card-title text-center mb-4">Admin Login</h2>
+    <!-- Navigation Bar -->
+    <header>
+        <nav class="navbar navbar-expand-lg fixed-top">
+            <div class="container">
+                <a class="navbar-brand" href="{{ url_for('index') }}">
+                    <i class="fas fa-barcode mr-2"></i> <span class="brand-text">Grocery Scanner</span>
+                </a>
+                
+                <!-- Add style for better brand visibility in dark mode -->
+                <style>
+                    [data-theme="dark"] .navbar-brand {
+                        color: var(--primary);
+                        text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+                    }
+                    
+                    [data-theme="dark"] .navbar-brand .brand-text {
+                        font-weight: bold;
+                    }
+                </style>
+                <div class="ml-auto">
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="login-container">
+        <div class="login-card card">
+            <div class="login-header">
+                <img src="{{ url_for('static', filename='uploads/BAC_Logo_tr.png') }}" alt="Logo" class="login-logo light-mode-logo">
+                <img src="{{ url_for('static', filename='uploads/BAC_Logo_tr_dar.png') }}" alt="Logo" class="login-logo dark-mode-logo" style="display: none;">
+                
+                <!-- Script to toggle logo based on theme -->
+                <script>
+                  function updateLogo() {
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const lightLogo = document.querySelector('.light-mode-logo');
+                    const darkLogo = document.querySelector('.dark-mode-logo');
+                    
+                    if (currentTheme === 'dark') {
+                      lightLogo.style.display = 'none';
+                      darkLogo.style.display = 'block';
+                    } else {
+                      lightLogo.style.display = 'block';
+                      darkLogo.style.display = 'none';
+                    }
+                  }
+                  
+                  // Update logo on page load
+                  document.addEventListener('DOMContentLoaded', updateLogo);
+                  
+                  // Update logo when theme changes
+                  const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                      if (mutation.attributeName === 'data-theme') {
+                        updateLogo();
+                      }
+                    });
+                  });
+                  
+                  observer.observe(document.documentElement, { attributes: true });
+                </script>
+                <h2 class="login-title">Admin Dashboard</h2>
+                <p class="text-white mb-0">Enter your password to access the dashboard</p>
+            </div>
+            
+            <div class="login-body">
                 {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                <div class="alert alert-danger" role="alert">
-                    {% for category, message in messages %}
-                    <p class="mb-0">{{ message }}</p>
-                    {% endfor %}
+                <div class="alert alert-danger slide-in-up" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-circle fa-2x mr-3"></i>
+                        <div>
+                            {% for category, message in messages %}
+                            <p class="mb-0">{{ message }}</p>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
                 {% endif %}
                 {% endwith %}
+                
                 <form method="post">
                     <div class="form-group">
-                        <input type="password" class="form-control" name="password" placeholder="Password" required>
+                        <label for="password"><i class="fas fa-lock mr-2"></i>Password</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                            </div>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Enter admin password" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <input type="submit" class="btn btn-primary btn-block" value="Login">
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary btn-block btn-login">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                        </button>
                     </div>
                 </form>
+                
+                <div class="login-footer">
+                    <a href="{{ url_for('index') }}"><i class="fas fa-arrow-left mr-1"></i> Back to Main Application</a>
+                </div>
             </div>
         </div>
     </div>
@@ -105,13 +247,17 @@ For more details, refer to the EULA or contact Jason Dank at jasondank@yahoo.com
         // Dark mode toggle functionality with persistence.
         document.getElementById('themeToggle').addEventListener('click', function () {
             const htmlEl = document.documentElement;
+            const iconElement = this.querySelector('i');
+            
             if (htmlEl.getAttribute('data-theme') === 'light') {
                 htmlEl.setAttribute('data-theme', 'dark');
-                this.textContent = "Switch to Light Mode";
+                iconElement.classList.remove('fa-moon');
+                iconElement.classList.add('fa-sun');
                 localStorage.setItem('theme', 'dark');
             } else {
                 htmlEl.setAttribute('data-theme', 'light');
-                this.textContent = "Switch to Dark Mode";
+                iconElement.classList.remove('fa-sun');
+                iconElement.classList.add('fa-moon');
                 localStorage.setItem('theme', 'light');
             }
         });
